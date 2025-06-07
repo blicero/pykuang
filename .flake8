@@ -1,0 +1,7 @@
+# Time-stamp: <2024-05-20 15:17:58 krylon>
+[flake8]
+max-line-length = 100
+extend-ignore = D400,D107,D105
+exclude = test_example_feed.py
+per-file-ignores =
+                 test_example_feed: E501
