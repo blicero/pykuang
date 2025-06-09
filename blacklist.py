@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-09 20:47:39 krylon>
+# Time-stamp: <2025-06-09 21:13:10 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 06. 2025
@@ -16,6 +16,7 @@ pykuang.blacklist
 (c) 2025 Benjamin Walkenhorst
 """
 
+import re
 from abc import ABC, abstractmethod
 from ipaddress import IPv4Address, IPv4Network
 from threading import Lock
@@ -134,6 +135,26 @@ class NetworkPattern(BlacklistPattern):
         return False
 
 
+class NamePattern(BlacklistPattern):
+    """NamePattern is a regular expression to match hostnames."""
+
+    pat: re.Pattern
+
+    def __init__(self, pat: Union[str, re.Pattern]) -> None:
+        self.cnt = 0
+        if isinstance(pat, str):
+            self.pat = re.compile(pat, re.I | re.X)
+        else:
+            self.pat = pat
+
+    def match(self, item: str) -> bool:
+        """Return True if the given string is matched by the instance's pattern."""
+        if self.pat.match(item):
+            self.cnt += 1
+            return True
+        return False
+
+
 class Blacklist(ABC):
     """Base class for blacklists."""
 
@@ -165,6 +186,10 @@ class IPBlacklist(Blacklist):
         """Return True if the given address is matched by the Blacklist."""
         if isinstance(s, str):
             s = IPv4Address(s)
+
+        if s.is_multicast or s.is_private:
+            return True
+
         with self.lock:
             for net in self.items:
                 if net.match(s):
