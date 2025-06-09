@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-07 16:35:12 krylon>
+# Time-stamp: <2025-06-09 20:49:12 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -16,14 +16,15 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-07 Sa 16:35]
+   #+CAPTION: Clock summary at [2025-06-09 Mo 20:49]
    | Headline               | Time   |        |      |
    |------------------------+--------+--------+------|
-   | *Total time*           | *1:14* |        |      |
+   | *Total time*           | *5:45* |        |      |
    |------------------------+--------+--------+------|
-   | *PyKuang [0/0]*        | *1:14* |        |      |
-   | \_  /Components [0/0]/ |        | /1:14/ |      |
+   | *PyKuang [0/0]*        | *5:45* |        |      |
+   | \_  /Components [0/0]/ |        | /5:45/ |      |
    | \_    Model [0/0]      |        |        | 0:31 |
+   | \_    Blacklist [0/0]  |        |        | 4:31 |
    | \_    Database [0/0]   |        |        | 0:43 |
    #+END:
 ** Journal
@@ -54,6 +55,11 @@
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
+    :END:
+    :LOGBOOK:
+    CLOCK: [2025-06-09 Mo 18:20]--[2025-06-09 Mo 20:49] =>  2:29
+    CLOCK: [2025-06-09 Mo 15:48]--[2025-06-09 Mo 16:50] =>  1:02
+    CLOCK: [2025-06-08 So 16:54]--[2025-06-08 So 17:54] =>  1:00
     :END:
 *** Database [0/0]
     :PROPERTIES:
