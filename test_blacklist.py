@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-09 21:46:15 krylon>
+# Time-stamp: <2025-06-10 17:18:29 krylon>
 #
 # /data/code/python/pykuang/test_blacklist.py
 # created on 09. 06. 2025
@@ -17,8 +17,8 @@ pykuang.test_blacklist
 """
 
 import unittest
-from ipaddress import IPv4Address
-from typing import NamedTuple, Optional
+from ipaddress import IPv4Address, IPv6Address, ip_address
+from typing import NamedTuple, Optional, Union
 
 from pykuang.blacklist import IPBlacklist, reserved_networks
 
@@ -26,7 +26,7 @@ from pykuang.blacklist import IPBlacklist, reserved_networks
 class SampleAddr(NamedTuple):
     """Bla"""
 
-    addr: IPv4Address
+    addr: Union[IPv4Address, IPv6Address]
     expect_match: bool
     expect_err: bool
 
@@ -55,7 +55,11 @@ class IPBlacklistTest(unittest.TestCase):
     def test_02_match_addr(self) -> None:
         """Test matching various IP addresses."""
         samples: list[SampleAddr] = [
-            SampleAddr(IPv4Address("10.10.42.215"), True, False),
+            SampleAddr(ip_address("10.10.42.215"), True, False),
+            SampleAddr(ip_address("42.23.1.9"), False, False),
+            SampleAddr(ip_address("::1"), True, False),
+            SampleAddr(ip_address("fd00::bc80:5e52:e29c:ccda"), True, False),
+            SampleAddr(ip_address("2a00:4841:1640:6d00:b772:9efc:6e0c:fec3"), False, False),
         ]
 
         for s in samples:

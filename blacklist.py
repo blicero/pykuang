@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-09 21:13:10 krylon>
+# Time-stamp: <2025-06-10 17:17:05 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 06. 2025
@@ -18,7 +18,8 @@ pykuang.blacklist
 
 import re
 from abc import ABC, abstractmethod
-from ipaddress import IPv4Address, IPv4Network
+from ipaddress import (IPv4Address, IPv4Network, IPv6Address, IPv6Network,
+                       ip_address, ip_network)
 from threading import Lock
 from typing import Final, Sequence, Union
 
@@ -39,7 +40,7 @@ reserved_networks: Final[list[str]] = [
     "255.0.0.0/8",
 ]
 
-name_patters: Final[list[str]] = [
+name_patterns: Final[list[str]] = [
     "\\bdiu?p-?\\d*\\.",
     "(?:versanet|telekom|uni-paderborn|upb)\\.(?:de|net|com|biz|eu)\\.?$",
     "[.]?nothing[.]",
@@ -114,20 +115,20 @@ class BlacklistPattern(ABC):
 class NetworkPattern(BlacklistPattern):
     """NetworkPattern is an IP Address or an IP network."""
 
-    net: IPv4Network
+    net: Union[IPv4Network, IPv6Network]
 
-    def __init__(self, net: Union[str, IPv4Network]) -> None:
+    def __init__(self, net: Union[str, IPv4Network, IPv6Network]) -> None:
         self.cnt = 0
         if isinstance(net, str):
-            self.net = IPv4Network(net)
-        elif isinstance(net, IPv4Network):
+            self.net = ip_network(net)
+        elif isinstance(net, (IPv4Network, IPv6Network)):
             self.net = net
         else:
             raise TypeError(
                 f"Invalid type for net ({net.__class__.__name__}), expected str or IPv4Network"
             )
 
-    def match(self, item: IPv4Address) -> bool:
+    def match(self, item: Union[IPv4Address, IPv6Address]) -> bool:
         """Match the given IP address against the Pattern's network."""
         if item in self.net:
             self.cnt += 1
@@ -182,10 +183,10 @@ class IPBlacklist(Blacklist):
     def _sort(self) -> None:
         self.items.sort(reverse=True, key=lambda x: x.cnt)
 
-    def match(self, s: Union[str, IPv4Address]) -> bool:
+    def match(self, s: Union[str, IPv4Address, IPv6Address]) -> bool:
         """Return True if the given address is matched by the Blacklist."""
         if isinstance(s, str):
-            s = IPv4Address(s)
+            s = ip_address(s)
 
         if s.is_multicast or s.is_private:
             return True
