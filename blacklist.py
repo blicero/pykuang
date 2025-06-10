@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-10 17:31:13 krylon>
+# Time-stamp: <2025-06-10 18:38:27 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 06. 2025
@@ -188,7 +188,11 @@ class IPBlacklist(Blacklist):
         if isinstance(s, str):
             s = ip_address(s)
 
-        if s.is_multicast or s.is_private:
+        if s.is_multicast or \
+           s.is_private or \
+           s.is_reserved or \
+           s.is_loopback or \
+           s.is_link_local:
             return True
 
         with self.lock:
