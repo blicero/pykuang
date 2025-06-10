@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-10 17:17:05 krylon>
+# Time-stamp: <2025-06-10 17:31:13 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 06. 2025
@@ -194,6 +194,28 @@ class IPBlacklist(Blacklist):
         with self.lock:
             for net in self.items:
                 if net.match(s):
+                    self._sort()
+                    return True
+        return False
+
+
+class NameBlacklist(Blacklist):
+    """NameBlacklist matches hostnames against a list of regular expressions."""
+
+    items: list[NamePattern]
+
+    def __init__(self, items: list[str]) -> None:
+        self.lock = Lock()
+        self.items = [NamePattern(x) for x in items]
+
+    def _sort(self) -> None:
+        self.items.sort(reverse=True, key=lambda x: x.cnt)
+
+    def match(self, s: str) -> bool:
+        """Return True if the given string is matched by any elements in the Blacklist."""
+        with self.lock:
+            for pat in self.items:
+                if pat.match(s):
                     self._sort()
                     return True
         return False
