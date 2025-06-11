@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 18:20:34 krylon>
+# Time-stamp: <2025-06-11 18:29:21 krylon>
 #
 # /data/code/python/pykuang/config.py
 # created on 11. 06. 2025
@@ -22,7 +22,9 @@ from typing import Any, Final
 
 import krylib
 import tomlkit
-from tomlkit import Container, Table, TOMLDocument, TOMLFile
+from tomlkit.items import Table
+from tomlkit.toml_document import Container, TOMLDocument
+from tomlkit.toml_file import TOMLFile
 
 from pykuang import common
 
@@ -58,6 +60,8 @@ class Config:
             self.path = common.path.config()
         else:
             self.path = path
+
+        common.init_app()
 
         with open_lock:
             exist: Final[bool] = krylib.fexist(self.path)
