@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-11 18:40:39 krylon>
+# Time-stamp: <2025-06-11 23:44:47 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -16,16 +16,16 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-11 Mi 18:40]
+   #+CAPTION: Clock summary at [2025-06-11 Mi 23:44]
    | Headline                  | Time    |         |       |
    |---------------------------+---------+---------+-------|
-   | *Total time*              | *13:13* |         |       |
+   | *Total time*              | *18:02* |         |       |
    |---------------------------+---------+---------+-------|
-   | *PyKuang [0/0]*           | *13:13* |         |       |
-   | \_  /Components [0/0]/    |         | /13:13/ |       |
+   | *PyKuang [0/0]*           | *18:02* |         |       |
+   | \_  /Components [0/0]/    |         | /18:02/ |       |
    | \_    Configuration [0/0] |         |         |  0:25 |
    | \_    Model [0/0]         |         |         |  0:31 |
-   | \_    Generator [0/0]     |         |         |  1:05 |
+   | \_    Generator [0/0]     |         |         |  5:54 |
    | \_    Blacklist [0/0]     |         |         | 10:29 |
    | \_    Database [0/0]      |         |         |  0:43 |
    #+END:
@@ -62,6 +62,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-06-11 Mi 18:55]--[2025-06-11 Mi 23:44] =>  4:49
     CLOCK: [2025-06-11 Mi 17:48]--[2025-06-11 Mi 18:14] =>  0:26
     CLOCK: [2025-06-10 Di 17:43]--[2025-06-10 Di 18:22] =>  0:39
     :END:
