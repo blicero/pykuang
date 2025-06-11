@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 18:29:21 krylon>
+# Time-stamp: <2025-06-11 20:07:43 krylon>
 #
 # /data/code/python/pykuang/config.py
 # created on 11. 06. 2025
@@ -34,6 +34,7 @@ default_config: Final[str] = """# Time-stamp: <>
 
 [Generator]
 Resolver = ["10.10.0.1"]
+Parallel = 16
 
 """
 
