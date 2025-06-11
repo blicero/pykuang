@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 18:25:50 krylon>
+# Time-stamp: <2025-06-11 18:48:44 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -24,7 +24,8 @@ from random import randbytes, random
 from typing import Any, Final, Optional, Union
 
 from dns import rdatatype
-from dns.resolver import NXDOMAIN, Resolver
+from dns.exception import DNSException
+from dns.resolver import Resolver
 
 from pykuang import common
 from pykuang.blacklist import (IPBlacklist, NameBlacklist, name_patterns,
@@ -88,7 +89,7 @@ class Generator:  # pylint: disable-msg=R0903
         query: Final[str] = addr.reverse_pointer
         try:
             ans = self.res.resolve(query, rdatatype.PTR)
-        except NXDOMAIN:
+        except DNSException:
             return None
 
         if ans.rrset is None or len(ans.rrset) == 0:
@@ -99,9 +100,10 @@ class Generator:  # pylint: disable-msg=R0903
     def gen_host(self) -> Optional[Host]:
         """Attempt to generate a Host."""
         addr = self.gen_ip()
-        name: Optional[str] = None
+        name: Optional[str] = self.resolve_name(addr)
 
         while name is None or self.name_blacklist.match(name):
+            addr = self.gen_ip()
             name = self.resolve_name(addr)
 
         h: Host = Host(name=name, addr=addr, src=HostSource.Generator)
