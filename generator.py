@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 18:08:46 krylon>
+# Time-stamp: <2025-06-11 18:13:28 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -65,7 +65,7 @@ class Generator:  # pylint: disable-msg=R0903
     def gen_ip(self) -> Union[IPv4Address, IPv6Address]:
         """Generate a random IP address."""
         cnt: int = 4
-        if random() < self.v6_weight:
+        if False and random() < self.v6_weight:  # disable ipv6 generation for now
             self.log.debug("Generate IPv6 address.")
             cnt = 16
 
