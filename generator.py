@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 18:48:44 krylon>
+# Time-stamp: <2025-06-11 23:44:04 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -20,7 +20,9 @@ pykuang.generator
 import dbm
 import logging
 from ipaddress import IPv4Address, IPv6Address, ip_address
+from queue import Queue
 from random import randbytes, random
+from threading import Lock, Thread
 from typing import Any, Final, Optional, Union
 
 from dns import rdatatype
@@ -44,6 +46,10 @@ class Generator:  # pylint: disable-msg=R0903
         "net_blacklist",
         "v6_weight",
         "res",
+        "queue",
+        "worker_cnt",
+        "active_flag",
+        "lock",
     ]
 
     log: logging.Logger
@@ -52,6 +58,10 @@ class Generator:  # pylint: disable-msg=R0903
     net_blacklist: IPBlacklist
     v6_weight: float
     res: Resolver
+    queue: Queue
+    worker_cnt: int
+    active_flag: bool
+    lock: Lock
 
     def __init__(self, cache_path: str = "", v6: float = 0.125) -> None:
         cfg = Config()
@@ -67,6 +77,37 @@ class Generator:  # pylint: disable-msg=R0903
         self.res = Resolver("", False)
         self.res.nameservers = cfg.get("Generator", "Resolver")
         self.res.edns = True
+        self.queue = Queue()
+        self.worker_cnt = cfg.get("Generator", "Parallel")
+        self.active_flag = False
+        self.lock = Lock()
+
+    def is_active(self) -> bool:
+        """Return the state of the Generator's active flag."""
+        with self.lock:
+            return self.active_flag
+
+    def stop(self) -> None:
+        """Clear the Generator's active flag."""
+        with self.lock:
+            self.active_flag = False
+
+    def start(self) -> None:
+        """Start the Generator."""
+        for i in range(self.worker_cnt):
+            wname = f"Generator#{i+1}"
+            w = Thread(target=self._worker, name=wname, args=(wname, ), daemon=True)
+            w.start()
+
+    def _worker(self, name: str) -> None:
+        self.log.debug("Worker %s starting up.", name)
+        try:
+            while self.is_active():
+                h: Optional[Host] = self.gen_host()
+                if h is not None:
+                    self.queue.put(h)
+        finally:
+            self.log.debug("Worker %s is done.", name)
 
     def gen_ip(self) -> Union[IPv4Address, IPv6Address]:
         """Generate a random IP address."""
