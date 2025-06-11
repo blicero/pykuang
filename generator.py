@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 18:13:28 krylon>
+# Time-stamp: <2025-06-11 18:25:50 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -29,6 +29,7 @@ from dns.resolver import NXDOMAIN, Resolver
 from pykuang import common
 from pykuang.blacklist import (IPBlacklist, NameBlacklist, name_patterns,
                                reserved_networks)
+from pykuang.config import Config
 from pykuang.model import Host, HostSource
 
 
@@ -52,6 +53,8 @@ class Generator:  # pylint: disable-msg=R0903
     res: Resolver
 
     def __init__(self, cache_path: str = "", v6: float = 0.125) -> None:
+        cfg = Config()
+
         if cache_path == "":
             cache_path = common.path.ipcache()
 
@@ -60,12 +63,14 @@ class Generator:  # pylint: disable-msg=R0903
         self.name_blacklist = NameBlacklist(name_patterns)
         self.net_blacklist = IPBlacklist(reserved_networks)
         self.v6_weight = v6
-        self.res = Resolver()
+        self.res = Resolver("", False)
+        self.res.nameservers = cfg.get("Generator", "Resolver")
+        self.res.edns = True
 
     def gen_ip(self) -> Union[IPv4Address, IPv6Address]:
         """Generate a random IP address."""
         cnt: int = 4
-        if False and random() < self.v6_weight:  # disable ipv6 generation for now
+        if False and random() < self.v6_weight:  # pylint: disable-msg=R1727
             self.log.debug("Generate IPv6 address.")
             cnt = 16
 
