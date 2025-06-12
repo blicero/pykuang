@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 23:43:30 krylon>
+# Time-stamp: <2025-06-12 16:40:31 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -18,7 +18,9 @@ pykuang.nexus
 
 
 import logging
-from threading import Lock
+import sys
+import time
+from threading import Lock, Thread
 
 from pykuang import common
 from pykuang.database import Database
@@ -62,6 +64,8 @@ class Nexus:
         with self.lock:
             self.active_flag = True
             self.gen.start()
+            gen_thr = Thread(target=self._gatherer, daemon=True)
+            gen_thr.start()
 
     def stop(self) -> None:
         """Stop all the moving parts."""
@@ -75,7 +79,21 @@ class Nexus:
             h: Host = self.gen.queue.get()
             with self.db:
                 self.db.host_add(h)
+            self.log.debug("Got one Host from Generator: ID = %d, name = %s, addr = %s",
+                           h.host_id,
+                           h.name,
+                           h.addr)
 
+
+if __name__ == '__main__':
+    nex = Nexus()
+    nex.start()
+    try:
+        while nex.active:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Bye Bye")
+        sys.exit(0)
 
 # Local Variables: #
 # python-indent: 4 #
