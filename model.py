@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-07 16:16:00 krylon>
+# Time-stamp: <2025-06-12 17:42:27 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 07. 06. 2025
@@ -18,9 +18,10 @@ pykuang.model
 
 
 from dataclasses import dataclass
+from datetime import datetime
 from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
-from typing import Union
+from typing import Optional, Union
 
 
 class HostSource(IntEnum):
@@ -42,6 +43,27 @@ class Host:
     src: HostSource
     location: str = ""
     os: str = ""
+    add_stamp: Optional[datetime] = None
+
+
+class XfrStatus(IntEnum):
+    """XfrStatus represents the status of an attempted DNS zone transfer."""
+
+    Blank = auto()
+    Started = auto()
+    Refused = auto()
+    OK = auto()
+
+
+@dataclass(slots=True, kw_only=True)
+class Xfr:
+    """Xfr represents a DNS zone transfer."""
+
+    xid: int = -1
+    zone: str
+    begin: datetime
+    end: Optional[datetime] = None
+    status: XfrStatus = XfrStatus.Blank
 
 # Local Variables: #
 # python-indent: 4 #

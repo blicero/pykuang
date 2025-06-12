@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-07 16:32:19 krylon>
+# Time-stamp: <2025-06-12 17:52:54 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -18,13 +18,15 @@ pykuang.database
 
 import logging
 import sqlite3
+from datetime import datetime
 from enum import IntEnum, auto, unique
 from threading import Lock
-from typing import Final
+from typing import Final, Optional
 
 import krylib
 
 from pykuang import common
+from pykuang.model import Host, Xfr, XfrStatus
 
 
 class DBError(common.KuangError):
@@ -76,7 +78,7 @@ CREATE TABLE xfr (
     zone TEXT UNIQUE NOT NULL,
     begin INTEGER NOT NULL,
     end INTEGER,
-    status INTEGER,
+    status INTEGER NOT NULL,
     CHECK ((end IS NULL) OR (end > begin))
 ) STRICT
     """,
@@ -105,6 +107,7 @@ class qid(IntEnum):
     XfrEnd = auto()
     XfrGetByZone = auto()
     XfrGetAll = auto()
+    XfrGetUnfinished = auto()
 
 
 qdb: Final[dict[qid, str]] = {
@@ -142,6 +145,34 @@ SELECT
     location,
     os
 FROM host
+    """,
+    qid.XfrAdd: "INSERT INTO xfr (zone, begin, status) VALUES (?, ?)",
+    qid.XfrEnd: "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
+    qid.XfrGetByZone: """
+SELECT
+    id,
+    begin,
+    end,
+    status
+FROM xfr
+WHERE zone = ?
+    """,
+    qid.XfrGetAll: """
+SELECT
+    id,
+    zone,
+    begin,
+    end,
+    status
+FROM xfr
+    """,
+    qid.XfrGetUnfinished: """
+SELECT
+    id,
+    zone,
+    begin
+FROM xfr
+WHERE end IS NULL
     """,
 }
 
@@ -197,6 +228,48 @@ class Database:
         """Close the underlying database connection explicitly."""
         self.db.close()
 
+    def host_add(self, h: Host) -> None:
+        """Add a Host to the database."""
+        now = datetime.now()
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostAdd], (h.name, str(h.addr), h.src.value, int(now.timestamp())))
+        assert cur.lastrowid is not None
+        h.host_id = cur.lastrowid
+        h.add_stamp = now
+
+    def host_set_location(self, h: Host, loc: str) -> None:
+        """Set a Host's location."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostSetLocation], (loc, h.host_id))
+        h.location = loc
+
+    def host_set_os(self, h: Host, os: str) -> None:
+        """Set a Host's OS."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostSetOS], (os, h.host_id))
+        h.os = os
+
+    def xfr_add(self, zone: str) -> Optional[Xfr]:
+        """Register a DNS zone to be transferred in the database."""
+        now = datetime.now()
+        cur = self.db.cursor()
+        try:
+            cur.execute(qdb[qid.XfrAdd], (zone, int(now.timestamp()), XfrStatus.Blank))
+        except sqlite3.Error as err:
+            msg = f"Failed to add XFR of {zone}: {err}"
+            self.log.error(msg)
+            raise DBError(msg) from err
+        assert cur.lastrowid is not None
+        xfr = Xfr(xid=cur.lastrowid, zone=zone, begin=now, status=XfrStatus.Blank)
+        return xfr
+
+    def xfr_end(self, xfr: Xfr, status: XfrStatus) -> None:
+        """Mark an attempted zone transfer as finished (successfully or not)."""
+        now = datetime.now()
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.XfrEnd], (int(now.timestamp()), status, xfr.xid))
+        xfr.end = now
+        xfr.status = status
 
 # Local Variables: #
 # python-indent: 4 #
