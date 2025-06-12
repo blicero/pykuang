@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-11 23:44:47 krylon>
+# Time-stamp: <2025-06-12 18:22:21 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -16,18 +16,19 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-11 Mi 23:44]
+   #+CAPTION: Clock summary at [2025-06-12 Do 18:22]
    | Headline                  | Time    |         |       |
    |---------------------------+---------+---------+-------|
-   | *Total time*              | *18:02* |         |       |
+   | *Total time*              | *19:39* |         |       |
    |---------------------------+---------+---------+-------|
-   | *PyKuang [0/0]*           | *18:02* |         |       |
-   | \_  /Components [0/0]/    |         | /18:02/ |       |
+   | *PyKuang [0/0]*           | *19:39* |         |       |
+   | \_  /Components [0/0]/    |         | /19:39/ |       |
    | \_    Configuration [0/0] |         |         |  0:25 |
    | \_    Model [0/0]         |         |         |  0:31 |
-   | \_    Generator [0/0]     |         |         |  5:54 |
+   | \_    Generator [0/0]     |         |         |  6:25 |
    | \_    Blacklist [0/0]     |         |         | 10:29 |
-   | \_    Database [0/0]      |         |         |  0:43 |
+   | \_    Database [0/0]      |         |         |  1:29 |
+   | \_    XFR [0/0]           |         |         |  0:20 |
    #+END:
 ** Journal
 ** Features [0/0]
@@ -62,6 +63,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-06-12 Do 16:57]--[2025-06-12 Do 17:28] =>  0:31
     CLOCK: [2025-06-11 Mi 18:55]--[2025-06-11 Mi 23:44] =>  4:49
     CLOCK: [2025-06-11 Mi 17:48]--[2025-06-11 Mi 18:14] =>  0:26
     CLOCK: [2025-06-10 Di 17:43]--[2025-06-10 Di 18:22] =>  0:39
@@ -85,12 +87,17 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-06-12 Do 17:28]--[2025-06-12 Do 18:02] =>  0:34
+    CLOCK: [2025-06-12 Do 16:31]--[2025-06-12 Do 16:43] =>  0:12
     CLOCK: [2025-06-07 Sa 15:51]--[2025-06-07 Sa 16:34] =>  0:43
     :END:
 *** XFR [0/0]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
+    :END:
+    :LOGBOOK:
+    CLOCK: [2025-06-12 Do 18:02]--[2025-06-12 Do 18:22] =>  0:20
     :END:
 *** Scanner [0/0]
     :PROPERTIES:
