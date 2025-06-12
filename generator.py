@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-11 23:44:04 krylon>
+# Time-stamp: <2025-06-12 17:27:38 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -22,8 +22,8 @@ import logging
 from ipaddress import IPv4Address, IPv6Address, ip_address
 from queue import Queue
 from random import randbytes, random
-from threading import Lock, Thread
-from typing import Any, Final, Optional, Union
+from threading import local, Lock, Thread
+from typing import Final, Optional, Union
 
 from dns import rdatatype
 from dns.exception import DNSException
@@ -41,7 +41,8 @@ class Generator:  # pylint: disable-msg=R0903
 
     __slots__ = [
         "log",
-        "cache",
+        "loc",
+        "cache_path",
         "name_blacklist",
         "net_blacklist",
         "v6_weight",
@@ -53,7 +54,8 @@ class Generator:  # pylint: disable-msg=R0903
     ]
 
     log: logging.Logger
-    cache: Any
+    loc: local
+    cache_path: str
     name_blacklist: NameBlacklist
     net_blacklist: IPBlacklist
     v6_weight: float
@@ -67,10 +69,14 @@ class Generator:  # pylint: disable-msg=R0903
         cfg = Config()
 
         if cache_path == "":
-            cache_path = common.path.ipcache()
+            self.cache_path = common.path.ipcache()
+        else:
+            self.cache_path = cache_path
 
+        # self.cache = dbm.open(cache_path, 'c', 0o644)
+
+        self.loc = local()
         self.log = common.get_logger("generator")
-        self.cache = dbm.open(cache_path, 'c', 0o644)
         self.name_blacklist = NameBlacklist(name_patterns)
         self.net_blacklist = IPBlacklist(reserved_networks)
         self.v6_weight = v6
@@ -81,6 +87,14 @@ class Generator:  # pylint: disable-msg=R0903
         self.worker_cnt = cfg.get("Generator", "Parallel")
         self.active_flag = False
         self.lock = Lock()
+
+    def _get_cache(self):
+        with self.lock:
+            try:
+                return self.loc.cache
+            except AttributeError:
+                self.loc.cache = dbm.open(self.cache_path, 'c', 0o644)
+                return self.loc.cache
 
     def is_active(self) -> bool:
         """Return the state of the Generator's active flag."""
@@ -94,6 +108,8 @@ class Generator:  # pylint: disable-msg=R0903
 
     def start(self) -> None:
         """Start the Generator."""
+        with self.lock:
+            self.active_flag = True
         for i in range(self.worker_cnt):
             wname = f"Generator#{i+1}"
             w = Thread(target=self._worker, name=wname, args=(wname, ), daemon=True)
@@ -112,17 +128,19 @@ class Generator:  # pylint: disable-msg=R0903
     def gen_ip(self) -> Union[IPv4Address, IPv6Address]:
         """Generate a random IP address."""
         cnt: int = 4
-        if False and random() < self.v6_weight:  # pylint: disable-msg=R1727
+        if random() < self.v6_weight:
             self.log.debug("Generate IPv6 address.")
             cnt = 16
 
+        cache = self._get_cache()
+
         addr: Union[IPv4Address, IPv6Address] = ip_address(randbytes(cnt))
 
-        while (str(addr) in self.cache) or self.net_blacklist.match(addr):
+        while (str(addr) in cache) or self.net_blacklist.match(addr):
             addr = ip_address(randbytes(cnt))
             # self.cache[str(addr)] = "True"
 
-        self.cache[str(addr)] = "True"
+        cache[str(addr)] = "True"
         return addr
 
     def resolve_name(self, addr: Union[IPv4Address, IPv6Address]) -> Optional[str]:
