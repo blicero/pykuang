@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-12 17:52:54 krylon>
+# Time-stamp: <2025-06-14 00:16:54 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -37,6 +37,10 @@ class IntegrityError(DBError):
     """IntegrityError indicates a violation of a database constraint."""
 
 
+class DBLockError(DBError):
+    """DBLockError indicates the database is locked."""
+
+
 open_lock: Final[Lock] = Lock()
 
 qinit: Final[list[str]] = [
@@ -44,11 +48,12 @@ qinit: Final[list[str]] = [
 CREATE TABLE host (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
-    addr TEXT UNIQUE NOT NULL,
+    addr TEXT NOT NULL,
     src INTEGER NOT NULL,
     atime INTEGER NOT NULL,
     location TEXT NOT NULL DEFAULT '',
-    os TEXT NOT NULL DEFAULT ''
+    os TEXT NOT NULL DEFAULT '',
+    UNIQUE(name, addr)
 ) STRICT
 """,
     "CREATE INDEX host_name_idx ON host (name)",
@@ -146,7 +151,7 @@ SELECT
     os
 FROM host
     """,
-    qid.XfrAdd: "INSERT INTO xfr (zone, begin, status) VALUES (?, ?)",
+    qid.XfrAdd: "INSERT INTO xfr (zone, begin, status) VALUES (?, ?, ?)",
     qid.XfrEnd: "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
     qid.XfrGetByZone: """
 SELECT
@@ -238,7 +243,13 @@ class Database:
         """Add a Host to the database."""
         now = datetime.now()
         cur = self.db.cursor()
-        cur.execute(qdb[qid.HostAdd], (h.name, str(h.addr), h.src.value, int(now.timestamp())))
+        try:
+            cur.execute(qdb[qid.HostAdd], (h.name, str(h.addr), h.src.value, int(now.timestamp())))
+        except sqlite3.OperationalError as oerr:
+            msg = str(oerr)
+            if msg.find("locked") != -1:
+                self.log.error("Timeout waiting for database lock")
+                raise DBLockError("Timeout waiting for database lock") from oerr
         assert cur.lastrowid is not None
         h.host_id = cur.lastrowid
         h.add_stamp = now
@@ -261,6 +272,13 @@ class Database:
         cur = self.db.cursor()
         try:
             cur.execute(qdb[qid.XfrAdd], (zone, int(now.timestamp()), XfrStatus.Blank))
+        except sqlite3.OperationalError as oerr:
+            msg = str(oerr)
+            if msg.find("locked") != -1:
+                self.log.error("Timeout waiting for database lock")
+                raise DBLockError("Timeout waiting for database lock") from oerr
+        except sqlite3.IntegrityError as ierr:
+            raise IntegrityError(str(ierr)) from ierr
         except sqlite3.Error as err:
             msg = f"Failed to add XFR of {zone}: {err}"
             self.log.error(msg)
@@ -276,6 +294,20 @@ class Database:
         cur.execute(qdb[qid.XfrEnd], (int(now.timestamp()), status, xfr.xid))
         xfr.end = now
         xfr.status = status
+
+    def xfr_get_by_zone(self, zone: str) -> Optional[Xfr]:
+        """Look up the XFR for the given zone."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.XfrGetByZone], (zone, ))
+        row = cur.fetchone()
+        if row is None:
+            return None
+        req = Xfr(xid=row[0],
+                  zone=zone,
+                  begin=datetime.fromtimestamp(row[1]),
+                  end=(datetime.fromtimestamp(row[2]) if row[2] is not None else None),
+                  status=XfrStatus(row[3]))
+        return req
 
 # Local Variables: #
 # python-indent: 4 #

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-12 16:40:31 krylon>
+# Time-stamp: <2025-06-14 00:18:50 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -23,9 +23,11 @@ import time
 from threading import Lock, Thread
 
 from pykuang import common
-from pykuang.database import Database
+from pykuang.config import Config
+from pykuang.database import Database, DBLockError
 from pykuang.generator import Generator
 from pykuang.model import Host
+from pykuang.xfr import XFRClient
 
 
 class Nexus:
@@ -37,6 +39,10 @@ class Nexus:
         "gen",
         "active_flag",
         "lock",
+        "xc",
+        "cnt_gen",
+        "cnt_xfr",
+        "cnt_scan",
     ]
 
     log: logging.Logger
@@ -44,13 +50,24 @@ class Nexus:
     gen: Generator
     active_flag: bool
     lock: Lock
+    xc: XFRClient
+    cnt_gen: int
+    cnt_xfr: int
+    cnt_scan: int
 
     def __init__(self) -> None:
+        cfg = Config()
+        gen_cnt = cfg.get("Generator", "Parallel")
+        xfr_cnt = cfg.get("XFR", "Parallel")
+
         self.log = common.get_logger("nexus")
         self.db = Database()
         self.gen = Generator()
         self.active_flag = False
         self.lock = Lock()
+        self.xc = XFRClient()
+        self.cnt_gen = gen_cnt
+        self.cnt_xfr = xfr_cnt
 
     @property
     def active(self) -> bool:
@@ -63,9 +80,10 @@ class Nexus:
         self.log.debug("Starting Nexus...")
         with self.lock:
             self.active_flag = True
-            self.gen.start()
+            self.gen.start(self.cnt_gen)
             gen_thr = Thread(target=self._gatherer, daemon=True)
             gen_thr.start()
+            self.xc.start(self.cnt_xfr)
 
     def stop(self) -> None:
         """Stop all the moving parts."""
@@ -78,7 +96,14 @@ class Nexus:
         while self.active:
             h: Host = self.gen.queue.get()
             with self.db:
-                self.db.host_add(h)
+                try:
+                    self.db.host_add(h)
+                except DBLockError:
+                    self.gen.queue.put(h)
+                    continue
+                z: str = h.zone
+                if z != "":
+                    self.xc.queue.put(z)
             self.log.debug("Got one Host from Generator: ID = %d, name = %s, addr = %s",
                            h.host_id,
                            h.name,

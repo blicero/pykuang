@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-12 17:27:38 krylon>
+# Time-stamp: <2025-06-14 00:04:47 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -65,7 +65,7 @@ class Generator:  # pylint: disable-msg=R0903
     active_flag: bool
     lock: Lock
 
-    def __init__(self, cache_path: str = "", v6: float = 0.125) -> None:
+    def __init__(self, cache_path: str = "", v6: float = 0.03125) -> None:
         cfg = Config()
 
         if cache_path == "":
@@ -106,11 +106,13 @@ class Generator:  # pylint: disable-msg=R0903
         with self.lock:
             self.active_flag = False
 
-    def start(self) -> None:
+    def start(self, cnt: int = -1) -> None:
         """Start the Generator."""
+        if cnt == -1:
+            cnt = self.worker_cnt
         with self.lock:
             self.active_flag = True
-        for i in range(self.worker_cnt):
+        for i in range(cnt):
             wname = f"Generator#{i+1}"
             w = Thread(target=self._worker, name=wname, args=(wname, ), daemon=True)
             w.start()
@@ -129,7 +131,7 @@ class Generator:  # pylint: disable-msg=R0903
         """Generate a random IP address."""
         cnt: int = 4
         if random() < self.v6_weight:
-            self.log.debug("Generate IPv6 address.")
+            # self.log.debug("Generate IPv6 address.")
             cnt = 16
 
         cache = self._get_cache()
@@ -138,7 +140,6 @@ class Generator:  # pylint: disable-msg=R0903
 
         while (str(addr) in cache) or self.net_blacklist.match(addr):
             addr = ip_address(randbytes(cnt))
-            # self.cache[str(addr)] = "True"
 
         cache[str(addr)] = "True"
         return addr

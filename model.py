@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-12 17:42:27 krylon>
+# Time-stamp: <2025-06-13 22:35:18 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 07. 06. 2025
@@ -17,11 +17,14 @@ pykuang.model
 """
 
 
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
-from typing import Optional, Union
+from typing import Final, Optional, Union
+
+zone_pat: Final[re.Pattern] = re.compile(r"^[^.]+[.](.*)$")
 
 
 class HostSource(IntEnum):
@@ -30,6 +33,7 @@ class HostSource(IntEnum):
     Generator = auto()
     MX = auto()
     NS = auto()
+    XFR = auto()
     User = auto()
 
 
@@ -44,6 +48,14 @@ class Host:
     location: str = ""
     os: str = ""
     add_stamp: Optional[datetime] = None
+
+    @property
+    def zone(self) -> str:
+        """Return the Host's DNS zone."""
+        z = zone_pat.findall(self.name)
+        if len(z) == 0:
+            return ""
+        return z[0]
 
 
 class XfrStatus(IntEnum):
