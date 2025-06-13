@@ -198,14 +198,20 @@ class Database:
         self.log = common.get_logger("database")
         self.log.debug("Open database at %s", self.path)
 
+        uri: Final[str] = \
+            f"file:{self.path}?_locking=NORMAL&_journal=WAL&_fk=1&recursive_triggers=0"
+
         with open_lock:
             exist: bool = krylib.fexist(self.path)
-            self.db = sqlite3.connect(self.path,
-                                      check_same_thread=False)
+            self.db = sqlite3.connect(uri,
+                                      check_same_thread=False,
+                                      autocommit=False,
+                                      uri=True,
+                                      timeout=10.0)
 
-            cur: sqlite3.Cursor = self.db.cursor()
-            cur.execute("PRAGMA foreign_keys = true")
-            cur.execute("PRAGMA journal_mode = WAL")
+            # cur: sqlite3.Cursor = self.db.cursor()
+            # cur.execute("PRAGMA foreign_keys = true")
+            # cur.execute("PRAGMA journal_mode = WAL")
 
             if not exist:
                 self.__create_db()
