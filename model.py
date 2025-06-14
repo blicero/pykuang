@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-13 22:35:18 krylon>
+# Time-stamp: <2025-06-14 06:25:17 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 07. 06. 2025
@@ -64,6 +64,8 @@ class XfrStatus(IntEnum):
     Blank = auto()
     Started = auto()
     Refused = auto()
+    Duplicate = auto()
+    Failed = auto()
     OK = auto()
 
 

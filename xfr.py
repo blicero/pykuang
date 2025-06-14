@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 00:07:58 krylon>
+# Time-stamp: <2025-06-14 06:27:07 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -32,6 +32,8 @@ from dns.node import Node, NodeKind
 from dns.rdatatype import RdataType
 
 from pykuang import common
+from pykuang.blacklist import (IPBlacklist, NameBlacklist, name_patterns,
+                               reserved_networks)
 from pykuang.database import Database, DBLockError, IntegrityError
 from pykuang.model import Host, HostSource, Xfr, XfrStatus
 
@@ -45,6 +47,8 @@ class XFRClient:
         "queue",
         "lock",
         "_active",
+        "name_blacklist",
+        "net_blacklist",
     ]
 
     log: logging.Logger
@@ -52,6 +56,8 @@ class XFRClient:
     queue: Queue
     lock: Lock
     _active: bool
+    name_blacklist: NameBlacklist
+    net_blacklist: IPBlacklist
 
     def __init__(self) -> None:
         self.log = common.get_logger("xfr")
@@ -59,6 +65,8 @@ class XFRClient:
         self.queue = Queue()
         self.lock = Lock()
         self._active = False
+        self.name_blacklist = NameBlacklist(name_patterns)
+        self.net_blacklist = IPBlacklist(reserved_networks)
 
     @property
     def db(self) -> Database:
@@ -105,9 +113,10 @@ class XFRClient:
                     continue
                 assert req is not None
                 self.log.debug("About to start XFRing zone %s (%d)", req.zone, req.xid)
-                self._perform_xfr(req)
+                status = self._perform_xfr(req)
+                self.db.xfr_end(req, status)
 
-    def _perform_xfr(self, zone: Xfr) -> bool:
+    def _perform_xfr(self, zone: Xfr) -> XfrStatus:
         self.log.debug("Attempting XFR of zone %s", zone.zone)
         try:
             soa_answer = dns.resolver.resolve(zone.zone, "SOA")
@@ -116,41 +125,47 @@ class XFRClient:
             self.log.debug("XFR of %s failed: %s",
                            zone.zone,
                            dnserr)
-            return False
+            return XfrStatus.Refused
 
-        db = self.db
+        # db = self.db
 
-        req = db.xfr_get_by_zone(zone.zone)
-        if req is not None:
-            return False
+        # req = db.xfr_get_by_zone(zone.zone)
+        # if req is not None:
+        #     return XfrStatus.Duplicate
 
         now: Final[datetime] = datetime.now()
-        status: XfrStatus = XfrStatus.Blank
-
         # XXX This code is a monstrosity, I really should decompose it into smaller chunks,
         #     if only for the indentation depth.
 
         try:
             z = dns.zone.from_xfr(dns.query.xfr(master_answer[0].address, zone.zone))
-            status = XfrStatus.Started
             for key, node in z.nodes.items():
                 name: str = key.to_text()
+                if self.name_blacklist.match(name):
+                    continue
                 if node.classify() == NodeKind.REGULAR:
                     self._process_node(now, name, node)
-            status = XfrStatus.OK
+            return XfrStatus.OK
         except DNSException as err:
             self.log.error("XFR of %s failed: %s",
                            zone.zone,
                            err)
-            status = XfrStatus.Refused
+            return XfrStatus.Refused
         except ConnectionResetError as rerr:
             self.log.error("XFR of %s failed: %s",
                            zone.zone,
                            rerr)
-            status = XfrStatus.Refused
-        finally:
-            db.xfr_end(zone, status)
-        return status == XfrStatus.OK
+            return XfrStatus.Refused
+        except ConnectionRefusedError as xerr:
+            self.log.error("XFR of %s failed: %s",
+                           zone.zone,
+                           xerr)
+            return XfrStatus.Refused
+        except TimeoutError as terr:
+            self.log.error("XFR of %s failed: %s",
+                           zone.zone,
+                           terr)
+            return XfrStatus.Failed
 
     def _process_node(self, now: datetime, name: str, node: Node) -> None:
         db = self.db
@@ -163,6 +178,8 @@ class XFRClient:
             for r in records:
                 match r.rdtype:
                     case RdataType.A | RdataType.AAAA:
+                        if self.net_blacklist.match(r.address):
+                            continue
                         h: Host = Host(name=name,
                                        addr=ip_address(r.address),
                                        src=HostSource.XFR,
