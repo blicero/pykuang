@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 15:18:29 krylon>
+# Time-stamp: <2025-06-14 15:53:47 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -20,7 +20,7 @@ pykuang.xfr
 import logging
 from datetime import datetime
 from ipaddress import ip_address
-from queue import Queue, ShutDown
+from queue import Empty, Queue, ShutDown
 from threading import Lock, Thread, local
 from typing import Final
 
@@ -150,6 +150,10 @@ class XFRClient:
                 if node.classify() == NodeKind.REGULAR:
                     self._process_node(now, name, node)
             return XfrStatus.OK
+        except EOFError:
+            self.log.error("XFR of %s failed: EOF",
+                           zone.zone)
+            return XfrStatus.Failed
         except DNSException as err:
             self.log.error("XFR of %s failed: %s",
                            zone.zone,
