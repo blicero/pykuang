@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-14 06:34:25 krylon>
+# Time-stamp: <2025-06-14 15:25:52 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,7 +8,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [2/2]
+* PyKuang [3/3]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -16,21 +16,22 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-14 Sa 06:34]
-   | Headline                  | Time      |           |       |      |
-   |---------------------------+-----------+-----------+-------+------|
-   | *Total time*              | *1d 0:38* |           |       |      |
-   |---------------------------+-----------+-----------+-------+------|
-   | *PyKuang [2/2]*           | *1d 0:38* |           |       |      |
-   | \_  /Components [2/2]/    |           | /1d 0:38/ |       |      |
-   | \_    Configuration [0/0] |           |           |  0:25 |      |
-   | \_    Model [0/0]         |           |           |  0:31 |      |
-   | \_    Generator [0/0]     |           |           |  6:25 |      |
-   | \_    Blacklist [0/0]     |           |           | 10:29 |      |
-   | \_    Database [0/0]      |           |           |  1:29 |      |
-   | \_    XFR [2/2]           |           |           |  5:19 |      |
-   | \_      Blacklist!        |           |           |       | 0:12 |
-   | \_      Ensure Follow-up  |           |           |       | 1:00 |
+   #+CAPTION: Clock summary at [2025-06-14 Sa 15:25]
+   | Headline                    | Time      |           |       |      |
+   |-----------------------------+-----------+-----------+-------+------|
+   | *Total time*                | *1d 0:58* |           |       |      |
+   |-----------------------------+-----------+-----------+-------+------|
+   | *PyKuang [3/3]*             | *1d 0:58* |           |       |      |
+   | \_  /Components [3/3]/      |           | /1d 0:58/ |       |      |
+   | \_    Configuration [0/0]   |           |           |  0:25 |      |
+   | \_    Model [0/0]           |           |           |  0:31 |      |
+   | \_    Generator [0/0]       |           |           |  6:25 |      |
+   | \_    Blacklist [0/0]       |           |           | 10:29 |      |
+   | \_    Database [0/0]        |           |           |  1:29 |      |
+   | \_    XFR [3/3]             |           |           |  5:39 |      |
+   | \_      Getting stuck much? |           |           |       | 0:20 |
+   | \_      Blacklist!          |           |           |       | 0:12 |
+   | \_      Ensure Follow-up    |           |           |       | 1:00 |
    #+END:
 ** Journal
 ** Features [0/0]
@@ -38,7 +39,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [2/2]
+** Components [3/3]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -93,7 +94,7 @@
     CLOCK: [2025-06-12 Do 16:31]--[2025-06-12 Do 16:43] =>  0:12
     CLOCK: [2025-06-07 Sa 15:51]--[2025-06-07 Sa 16:34] =>  0:43
     :END:
-*** XFR [2/2]
+*** XFR [3/3]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -102,6 +103,13 @@
     CLOCK: [2025-06-13 Fr 20:36]--[2025-06-14 Sa 00:23] =>  3:47
     CLOCK: [2025-06-12 Do 18:02]--[2025-06-12 Do 18:22] =>  0:20
     :END:
+**** DONE Getting stuck much?
+     CLOSED: [2025-06-14 Sa 15:25]
+     :LOGBOOK:
+     CLOCK: [2025-06-14 Sa 15:05]--[2025-06-14 Sa 15:25] =>  0:20
+     :END:
+     I suspect there is some kind of deadlock or something similar going on in
+     the XFRClient. Should look into it.
 **** DONE Blacklist!
      CLOSED: [2025-06-14 Sa 06:33]
      :LOGBOOK:
