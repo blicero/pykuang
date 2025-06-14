@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-14 00:42:26 krylon>
+# Time-stamp: <2025-06-14 06:34:25 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,7 +8,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [0/2]
+* PyKuang [2/2]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -16,19 +16,21 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-14 Sa 00:25]
-   | Headline                  | Time    |         |       |
-   |---------------------------+---------+---------+-------|
-   | *Total time*              | *23:26* |         |       |
-   |---------------------------+---------+---------+-------|
-   | *PyKuang [0/1]*           | *23:26* |         |       |
-   | \_  /Components [0/1]/    |         | /23:26/ |       |
-   | \_    Configuration [0/0] |         |         |  0:25 |
-   | \_    Model [0/0]         |         |         |  0:31 |
-   | \_    Generator [0/0]     |         |         |  6:25 |
-   | \_    Blacklist [0/0]     |         |         | 10:29 |
-   | \_    Database [0/0]      |         |         |  1:29 |
-   | \_    XFR [0/1]           |         |         |  4:07 |
+   #+CAPTION: Clock summary at [2025-06-14 Sa 06:34]
+   | Headline                  | Time      |           |       |      |
+   |---------------------------+-----------+-----------+-------+------|
+   | *Total time*              | *1d 0:38* |           |       |      |
+   |---------------------------+-----------+-----------+-------+------|
+   | *PyKuang [2/2]*           | *1d 0:38* |           |       |      |
+   | \_  /Components [2/2]/    |           | /1d 0:38/ |       |      |
+   | \_    Configuration [0/0] |           |           |  0:25 |      |
+   | \_    Model [0/0]         |           |           |  0:31 |      |
+   | \_    Generator [0/0]     |           |           |  6:25 |      |
+   | \_    Blacklist [0/0]     |           |           | 10:29 |      |
+   | \_    Database [0/0]      |           |           |  1:29 |      |
+   | \_    XFR [2/2]           |           |           |  5:19 |      |
+   | \_      Blacklist!        |           |           |       | 0:12 |
+   | \_      Ensure Follow-up  |           |           |       | 1:00 |
    #+END:
 ** Journal
 ** Features [0/0]
@@ -36,7 +38,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [0/2]
+** Components [2/2]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -91,7 +93,7 @@
     CLOCK: [2025-06-12 Do 16:31]--[2025-06-12 Do 16:43] =>  0:12
     CLOCK: [2025-06-07 Sa 15:51]--[2025-06-07 Sa 16:34] =>  0:43
     :END:
-*** XFR [0/2]
+*** XFR [2/2]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -100,10 +102,18 @@
     CLOCK: [2025-06-13 Fr 20:36]--[2025-06-14 Sa 00:23] =>  3:47
     CLOCK: [2025-06-12 Do 18:02]--[2025-06-12 Do 18:22] =>  0:20
     :END:
-**** TODO Blacklist!
+**** DONE Blacklist!
+     CLOSED: [2025-06-14 Sa 06:33]
+     :LOGBOOK:
+     CLOCK: [2025-06-14 Sa 05:18]--[2025-06-14 Sa 05:30] =>  0:12
+     :END:
      When performing zone transfers, I need to check any host names and IP
      addresses against my blacklists before adding them to the database!
-**** TODO Ensure Follow-up
+**** DONE Ensure Follow-up
+     CLOSED: [2025-06-14 Sa 06:33]
+     :LOGBOOK:
+     CLOCK: [2025-06-14 Sa 05:34]--[2025-06-14 Sa 06:34] =>  1:00
+     :END:
      I need to make sure that zone transfers have their ending marked in all
      cases.
      I *thought* I had done that, but the database after a short trial run
