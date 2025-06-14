@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 06:27:07 krylon>
+# Time-stamp: <2025-06-14 15:18:29 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -87,8 +87,9 @@ class XFRClient:
         """Start the XFR client."""
         with self.lock:
             self._active = True
-            for _ in range(cnt):
-                thr = Thread(target=self._run, daemon=True)
+            for i in range(cnt):
+                name: str = f"XFR Worker {i+1:02d}"
+                thr = Thread(target=self._run, name=name, daemon=True, args=(i+1, ))
                 thr.start()
 
     def stop(self) -> None:
@@ -97,18 +98,21 @@ class XFRClient:
             self._active = False
             self.queue.shutdown()
 
-    def _run(self) -> None:
+    def _run(self, worker_id: int) -> None:
         while self.active:
             try:
-                zone: str = self.queue.get()
+                zone: str = self.queue.get(timeout=5)
             except ShutDown:
                 return
+            except Empty:
+                self.log.debug("XFR Worker %d: Queue is empty", worker_id)
+                continue
             with self.db:
                 try:
                     req = self.db.xfr_add(zone)
                 except DBLockError:
                     self.queue.put(zone)
-                    return
+                    continue
                 except IntegrityError:
                     continue
                 assert req is not None
