@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 00:16:54 krylon>
+# Time-stamp: <2025-06-14 06:25:45 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -84,7 +84,7 @@ CREATE TABLE xfr (
     begin INTEGER NOT NULL,
     end INTEGER,
     status INTEGER NOT NULL,
-    CHECK ((end IS NULL) OR (end > begin))
+    CHECK ((end IS NULL) OR (end >= begin))
 ) STRICT
     """,
     "CREATE UNIQUE INDEX xfr_zone_idx ON xfr (zone)",
@@ -210,13 +210,14 @@ class Database:
             exist: bool = krylib.fexist(self.path)
             self.db = sqlite3.connect(uri,
                                       check_same_thread=False,
-                                      autocommit=False,
+                                      # autocommit=False,
                                       uri=True,
                                       timeout=10.0)
 
-            # cur: sqlite3.Cursor = self.db.cursor()
-            # cur.execute("PRAGMA foreign_keys = true")
-            # cur.execute("PRAGMA journal_mode = WAL")
+            cur: sqlite3.Cursor = self.db.cursor()
+            cur.execute("PRAGMA foreign_keys = true")
+            cur.execute("PRAGMA journal_mode = WAL")
+            self.db.autocommit = True
 
             if not exist:
                 self.__create_db()
