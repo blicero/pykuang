@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 00:04:47 krylon>
+# Time-stamp: <2025-06-14 17:13:39 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -155,7 +155,10 @@ class Generator:  # pylint: disable-msg=R0903
         if ans.rrset is None or len(ans.rrset) == 0:
             return None
 
-        return ans.rrset[0].to_text()[:-1]
+        name: str = ans.rrset[0].to_text()
+        if name.endswith("."):
+            name = name[:-1]
+        return name
 
     def gen_host(self) -> Optional[Host]:
         """Attempt to generate a Host."""

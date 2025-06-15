@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 15:53:47 krylon>
+# Time-stamp: <2025-06-14 17:15:34 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -92,6 +92,11 @@ class XFRClient:
                 thr = Thread(target=self._run, name=name, daemon=True, args=(i+1, ))
                 thr.start()
 
+        with self.db:
+            zones = self.db.xfr_get_unfinished()
+            for z in zones:
+                self.queue.put(z.zone)
+
     def stop(self) -> None:
         """Clear the XFRClient's active flag."""
         with self.lock:
@@ -114,7 +119,12 @@ class XFRClient:
                     self.queue.put(zone)
                     continue
                 except IntegrityError:
-                    continue
+                    req = self.db.xfr_get_by_zone(zone)
+                    if req is not None and req.status in (XfrStatus.Refused,
+                                                          XfrStatus.Duplicate,
+                                                          XfrStatus.Failed,
+                                                          XfrStatus.OK):
+                        continue
                 assert req is not None
                 self.log.debug("About to start XFRing zone %s (%d)", req.zone, req.xid)
                 status = self._perform_xfr(req)
@@ -150,30 +160,16 @@ class XFRClient:
                 if node.classify() == NodeKind.REGULAR:
                     self._process_node(now, name, node)
             return XfrStatus.OK
-        except EOFError:
-            self.log.error("XFR of %s failed: EOF",
-                           zone.zone)
-            return XfrStatus.Failed
-        except DNSException as err:
-            self.log.error("XFR of %s failed: %s",
-                           zone.zone,
-                           err)
-            return XfrStatus.Refused
-        except ConnectionResetError as rerr:
-            self.log.error("XFR of %s failed: %s",
-                           zone.zone,
-                           rerr)
-            return XfrStatus.Refused
-        except ConnectionRefusedError as xerr:
-            self.log.error("XFR of %s failed: %s",
-                           zone.zone,
-                           xerr)
-            return XfrStatus.Refused
-        except TimeoutError as terr:
+        except (EOFError, OSError) as terr:
             self.log.error("XFR of %s failed: %s",
                            zone.zone,
                            terr)
             return XfrStatus.Failed
+        except DNSException as cerr:
+            self.log.error("XFR of %s failed: %s",
+                           zone.zone,
+                           cerr)
+            return XfrStatus.Refused
 
     def _process_node(self, now: datetime, name: str, node: Node) -> None:
         db = self.db

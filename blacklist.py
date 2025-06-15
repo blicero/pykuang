@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-10 18:38:27 krylon>
+# Time-stamp: <2025-06-14 17:09:55 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 06. 2025
@@ -56,9 +56,7 @@ name_patterns: Final[list[str]] = [
     "\\bunn?ass?igned\\b",
     "^(?:client|host)(?:-?\\d+)?",
     "^(?:un|not-)(?:known|ass?igned|alloc(?:ated)?|registered|provisioned|used|defined|delegated)",
-    "^[^.]+.$",
-    "^\\.$",
-    "^\\*",
+    "t-ipconnect",
     "^\\w*eth(?:ernet)[^.]*\\.",
     "^\\w\\d+\\[\\-.]",
     "^customer-",
@@ -76,6 +74,8 @@ name_patterns: Final[list[str]] = [
     "^no.ptr",
     "^softbank\\d+\\.bbtec",
     "^this.ip",
+    "^\\d+$",
+    "versanet",
     "^user-?\\d+\\.",
     "aol\\.com\\.?$",
     "cable",
@@ -144,7 +144,7 @@ class NamePattern(BlacklistPattern):
     def __init__(self, pat: Union[str, re.Pattern]) -> None:
         self.cnt = 0
         if isinstance(pat, str):
-            self.pat = re.compile(pat, re.I | re.X)
+            self.pat = re.compile(pat, re.I)
         else:
             self.pat = pat
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 06:25:45 krylon>
+# Time-stamp: <2025-06-14 17:16:06 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -53,7 +53,8 @@ CREATE TABLE host (
     atime INTEGER NOT NULL,
     location TEXT NOT NULL DEFAULT '',
     os TEXT NOT NULL DEFAULT '',
-    UNIQUE(name, addr)
+    UNIQUE(name, addr),
+    CHECK (name <> '')
 ) STRICT
 """,
     "CREATE INDEX host_name_idx ON host (name)",
@@ -175,7 +176,8 @@ FROM xfr
 SELECT
     id,
     zone,
-    begin
+    begin,
+    status
 FROM xfr
 WHERE end IS NULL
     """,
@@ -309,6 +311,21 @@ class Database:
                   end=(datetime.fromtimestamp(row[2]) if row[2] is not None else None),
                   status=XfrStatus(row[3]))
         return req
+
+    def xfr_get_unfinished(self) -> list[Xfr]:
+        """Load all incomplete zone transfers from the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.XfrGetUnfinished])
+
+        zones: list[Xfr] = []
+
+        for row in cur:
+            req = Xfr(xid=row[0],
+                      zone=row[1],
+                      begin=datetime.fromtimestamp(row[2]),
+                      status=XfrStatus(row[3]))
+            zones.append(req)
+        return zones
 
 # Local Variables: #
 # python-indent: 4 #
