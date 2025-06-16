@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 06:25:17 krylon>
+# Time-stamp: <2025-06-16 18:51:29 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 07. 06. 2025
@@ -18,7 +18,7 @@ pykuang.model
 
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
@@ -48,6 +48,7 @@ class Host:
     location: str = ""
     os: str = ""
     add_stamp: Optional[datetime] = None
+    scan_stamp: Optional[datetime] = None
 
     @property
     def zone(self) -> str:
@@ -78,6 +79,18 @@ class Xfr:
     begin: datetime
     end: Optional[datetime] = None
     status: XfrStatus = XfrStatus.Blank
+
+
+@dataclass(slots=True, kw_only=True)
+class Port:
+    """Port represents a scanned Port. Duh."""
+
+    pid: int = -1
+    host_id: int
+    port: int
+    timestamp: datetime = field(default_factory=datetime.now)
+    response: Optional[str] = None
+
 
 # Local Variables: #
 # python-indent: 4 #

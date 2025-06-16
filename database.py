@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 17:16:06 krylon>
+# Time-stamp: <2025-06-16 19:29:56 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -20,13 +20,14 @@ import logging
 import sqlite3
 from datetime import datetime
 from enum import IntEnum, auto, unique
+from ipaddress import IPv4Address, IPv6Address, ip_address
 from threading import Lock
-from typing import Final, Optional
+from typing import Final, Optional, Union
 
 import krylib
 
 from pykuang import common
-from pykuang.model import Host, Xfr, XfrStatus
+from pykuang.model import Host, HostSource, Port, Xfr, XfrStatus
 
 
 class DBError(common.KuangError):
@@ -208,6 +209,27 @@ SELECT
 FROM xfr
 WHERE end IS NULL
     """,
+    qid.PortAdd: "INSERT INTO port (host_id, port_no, timestamp, response) VALUES (?, ?, ?, ?)",
+    qid.PortGetByHost: """
+SELECT
+    id,
+    port_no,
+    timestamp,
+    response
+FROM port
+WHERE host_id = ?
+ORDER BY port_no
+    """,
+    qid.PortGetByPort: """
+SELECT
+    id,
+    host_id,
+    timestamp,
+    response
+FROM port
+WHERE port_no = ?
+ORDER BY timestamp
+    """,
 }
 
 
@@ -296,12 +318,70 @@ class Database:
         cur.execute(qdb[qid.HostSetOS], (os, h.host_id))
         h.os = os
 
+    def host_get_by_name(self, name: str) -> Optional[Host]:
+        """Look up a Host by its name."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostGetByName], (name, ))
+        row = cur.fetchone()
+        if row is None:
+            return None
+        h: Host = Host(host_id=row[0],
+                       name=name,
+                       addr=ip_address(row[1]),
+                       src=HostSource(row[2]),
+                       add_stamp=datetime.fromtimestamp(row[3]),
+                       scan_stamp=(datetime.fromtimestamp(row[4]) if row[4] is not None else None),
+                       location=row[5],
+                       os=row[6])
+        return h
+
+    def host_get_by_addr(self, addr: Union[IPv4Address, IPv6Address, str]) -> Optional[Host]:
+        """Look up a Host by its address."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostGetByAddr], (str(addr), ))
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        h: Host = Host(host_id=row[0],
+                       addr=ip_address(addr),
+                       name=row[1],
+                       src=HostSource(row[2]),
+                       add_stamp=datetime.fromtimestamp(row[3]),
+                       scan_stamp=(datetime.fromtimestamp(row[4])
+                                   if row[4] is not None else None),
+                       location=row[5],
+                       os=row[6])
+        return h
+
+    def host_get_random(self, cnt: int) -> list[Host]:
+        """Get some random Hosts from the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostGetRandom], (cnt, ))
+        hosts: list[Host] = []
+
+        for row in cur:
+            h: Host = Host(host_id=row[0],
+                           name=row[1],
+                           addr=ip_address(row[2]),
+                           src=HostSource(row[3]),
+                           add_stamp=datetime.fromtimestamp(row[4]),
+                           scan_stamp=(datetime.fromtimestamp(row[5])
+                                       if row[5] is not None else None),
+                           location=row[6],
+                           os=row[7])
+            hosts.append(h)
+
+        return hosts
+
     def xfr_add(self, zone: str) -> Optional[Xfr]:
         """Register a DNS zone to be transferred in the database."""
         now = datetime.now()
         cur = self.db.cursor()
         try:
-            cur.execute(qdb[qid.XfrAdd], (zone, int(now.timestamp()), XfrStatus.Blank))
+            cur.execute(qdb[qid.XfrAdd], (zone,
+                                          int(now.timestamp()),
+                                          XfrStatus.Blank))
         except sqlite3.OperationalError as oerr:
             msg = str(oerr)
             if msg.find("locked") != -1:
@@ -314,7 +394,10 @@ class Database:
             self.log.error(msg)
             raise DBError(msg) from err
         assert cur.lastrowid is not None
-        xfr = Xfr(xid=cur.lastrowid, zone=zone, begin=now, status=XfrStatus.Blank)
+        xfr = Xfr(xid=cur.lastrowid,
+                  zone=zone,
+                  begin=now,
+                  status=XfrStatus.Blank)
         return xfr
 
     def xfr_end(self, xfr: Xfr, status: XfrStatus) -> None:
@@ -353,6 +436,45 @@ class Database:
                       status=XfrStatus(row[3]))
             zones.append(req)
         return zones
+
+    def port_add(self, port: Port) -> None:
+        """Add a freshly scanned port to the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.PortAdd], (port.host_id,
+                                       port.port,
+                                       int(port.timestamp.timestamp()),
+                                       port.response))
+        assert cur.lastrowid is not None
+        port.pid = cur.lastrowid
+
+    def port_get_by_host(self, host: Host) -> list[Port]:
+        """Fetch all ports of the given Host."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.PortGetByHost], (host.host_id, ))
+        ports: list[Port] = []
+        for row in cur:
+            p = Port(pid=row[0],
+                     host_id=host.host_id,
+                     port=row[1],
+                     timestamp=datetime.fromtimestamp(row[2]),
+                     response=row[3])
+            ports.append(p)
+
+        return ports
+
+    def port_get_by_port(self, port: int) -> list[Port]:
+        """Load all scanned ports with the given number."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.PortGetByPort], (port, ))
+        ports: list[Port] = []
+        for row in cur:
+            p = Port(pid=row[0],
+                     host_id=row[1],
+                     port=port,
+                     timestamp=datetime.fromtimestamp(row[2]),
+                     response=row[3])
+            ports.append(p)
+        return ports
 
 # Local Variables: #
 # python-indent: 4 #
