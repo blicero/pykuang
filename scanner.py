@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-16 20:31:11 krylon>
+# Time-stamp: <2025-06-16 22:35:23 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -157,6 +157,20 @@ class Scanner:
                 continue
             else:
                 pass
+
+    def scan_tcp_generic(self, host: Host, port: Port) -> bool:
+        """Attempt to establish a TCP connection to the given host and port."""
+        try:
+            af: socket.AddressFamily = socket.AF_INET
+            if isinstance(host.addr, IPv6Address):
+                af = socket.AF_INET6
+            # Nah, that isn't quite right, is it?
+            # Go makes that so much easier... Just sayin'
+        except OSError as err:
+            self.log.error("Failed to connect to %s:%d - %s",
+                           host.addr,
+                           port.port,
+                           err)
 
 # Local Variables: #
 # python-indent: 4 #
