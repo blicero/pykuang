@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 06:20:46 krylon>
+# Time-stamp: <2025-06-16 19:32:14 krylon>
 #
 # /data/code/python/pykuang/config.py
 # created on 11. 06. 2025
@@ -40,6 +40,8 @@ V6Weight = 0.03125
 [XFR]
 Parallel = 4
 
+[Scanner]
+Parallel = 16
 """
 
 open_lock: Final[Lock] = Lock()
