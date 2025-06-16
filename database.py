@@ -51,6 +51,7 @@ CREATE TABLE host (
     addr TEXT NOT NULL,
     src INTEGER NOT NULL,
     atime INTEGER NOT NULL,
+    ptime INTEGER,
     location TEXT NOT NULL DEFAULT '',
     os TEXT NOT NULL DEFAULT '',
     UNIQUE(name, addr),
@@ -91,6 +92,15 @@ CREATE TABLE xfr (
     "CREATE UNIQUE INDEX xfr_zone_idx ON xfr (zone)",
     "CREATE INDEX xfr_begin_idx ON xfr (begin)",
     "CREATE INDEX xfr_end_idx ON xfr (end)",
+    """
+CREATE TRIGGER tr_port_host_ptime
+    AFTER INSERT ON port
+    BEGIN
+        UPDATE host
+        SET ptime = unixepoch()
+        WHERE id = NEW.host_id;
+    END
+    """,
 ]
 
 
@@ -126,6 +136,7 @@ SELECT
     addr,
     src,
     atime,
+    ptime,
     location,
     os
 FROM host WHERE name = ?
@@ -136,6 +147,7 @@ SELECT
     name,
     src,
     atime,
+    ptime,
     location,
     os
 FROM host
@@ -148,9 +160,24 @@ SELECT
     addr,
     src,
     atime,
+    ptime,
     location,
     os
 FROM host
+    """,
+    qid.HostGetRandom: """
+SELECT
+    id,
+    name,
+    addr,
+    source,
+    atime,
+    ptime,
+    location,
+    os
+FROM host
+LIMIT ?
+OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
     """,
     qid.XfrAdd: "INSERT INTO xfr (zone, begin, status) VALUES (?, ?, ?)",
     qid.XfrEnd: "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
