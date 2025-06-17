@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 12:29:30 krylon>
+# Time-stamp: <2025-06-17 18:41:33 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -21,15 +21,37 @@ import logging
 import random
 import re
 import socket
-from ipaddress import IPv6Address
+import time
+from ipaddress import IPv4Address, IPv6Address
 from queue import Empty, Queue
-from threading import Lock, local
-from typing import Final, Optional
+from threading import Lock, Thread, local
+from typing import Final, Optional, Union
+
+import requests
+from dns.exception import DNSException
+from dns.resolver import Resolver
 
 from pykuang import common
 from pykuang.config import Config
 from pykuang.database import Database
 from pykuang.model import Host, HostSource, Port
+
+
+def get_af(addr: Union[IPv4Address, IPv6Address]) -> socket.AddressFamily:  # noqa: E501 # pylint: disable-msg=E0611,E1101
+    """Get the appropriate address family for the given IP address."""
+    if isinstance(addr, IPv4Address):
+        return socket.AF_INET
+    return socket.AF_INET6
+
+
+# telnet_probe: Final[list[int]] = [
+#     0xff, 0xfc, 0x25,  # Won't Authentication
+#     0xff, 0xfd, 0x03,  # Do Suppress Go Ahead
+#     0xff, 0xfc, 0x18,  # Won't Terminal Type
+#     0xff, 0xfc, 0x1f,  # Won't Window Size
+#     0xff, 0xfc, 0x20,  # Won't Terminal Speed
+#     0xff, 0xfb, 0x22,  # Will Linemode
+# ]
 
 www_pat: Final[re.Pattern] = re.compile("^www", re.I)
 
@@ -57,6 +79,11 @@ interesting_ports: Final[list[int]] = [
     8081,
 ]
 
+default_data: Final[bytes] = b"Wer das liest, ist doof.\n"
+http_agent: Final[str] = \
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) " + \
+    "Chrome/113.0.0.0 Safari/537.36"
+
 
 class Scanner:
     """Scanner scans ports. Duh. Aren't you sorry you asked?"""
@@ -81,7 +108,7 @@ class Scanner:
         self.log = common.get_logger("scanner")
         self.loc = local()
         self.lock = Lock()
-        self.scanq = Queue()
+        self.scanq = Queue(cnt)
         self._active = False
 
         if cnt == 0:
@@ -106,11 +133,25 @@ class Scanner:
             self.loc.db = Database()
             return self.loc.db
 
+    def start(self) -> None:
+        """Start the Scanner."""
+        with self.lock:
+            self._active = True
+        fthr = Thread(target=self._feeder, daemon=True)
+        fthr.start()
+
+        for i in range(self.cnt):
+            wthr = Thread(target=self._worker,
+                          daemon=True,
+                          name=f"ScanWorker{i+1:02d}",
+                          args=(i+1, ))
+            wthr.start()
+
     def stop(self) -> None:
         """Clear the Scanner's active flag, shutdown the queue."""
         with self.lock:
             self._active = False
-            self.scanq.shutdown()
+            # self.scanq.shutdown()
 
     def get_scan_port(self, host: Host, ports: set[int]) -> Optional[int]:
         """Get a semi-random port to scan on the given Host."""
@@ -148,31 +189,107 @@ class Scanner:
                                h.addr)
                 plist = db.port_get_by_host(h)
                 ports: set[int] = {p.port for p in plist}  # noqa: F841
-                target: int = self.get_scan_port(h, plist)
-                self.scanq.put((h, target))
+                target: Optional[int] = self.get_scan_port(h, ports)
+                if target is not None:
+                    self.log.debug("Attempting to scan Host %s (%s) Port %d",
+                                   h.name,
+                                   h.addr,
+                                   target)
+                    self.scanq.put((h, target))
+            time.sleep(1.0)
 
     def _worker(self, wid: int) -> None:
+        self.log.debug("Scanner Worker %d starting up", wid)
         while self.active:
             try:
                 scan_tuple = self.scanq.get(timeout=10)
+                p = Port(host_id=scan_tuple[0].host_id,
+                         port=scan_tuple[1])
+                result: bool = False
+
+                match scan_tuple[1]:
+                    case 80 | 443 | 8080 | 8081 | 1024:
+                        result = self.scan_http(scan_tuple[0], p)
+                    case 53:
+                        result = self.scan_dns(scan_tuple[0], p)
+                    case _:
+                        result = self.scan_tcp_generic(scan_tuple[0], p)
             except Empty:
                 continue
             else:
-                pass
+                self.log.debug("Scanned %s:%d - %s (%s)",
+                               scan_tuple[0].addr,
+                               p.port,
+                               p.response,
+                               result)
+                with self.db:
+                    self.db.port_add(p)
 
     def scan_tcp_generic(self, host: Host, port: Port) -> bool:
         """Attempt to establish a TCP connection to the given host and port."""
         try:
-            af: socket.AddressFamily = socket.AF_INET
-            if isinstance(host.addr, IPv6Address):
-                af = socket.AF_INET6
-            # Nah, that isn't quite right, is it?
-            # Go makes that so much easier... Just sayin'.
+            conn = socket.create_connection((str(host.addr), port.port))
+            conn.send(default_data)
+            response = conn.recv(4096)
         except OSError as err:
             self.log.error("Failed to connect to %s:%d - %s",
                            host.addr,
                            port.port,
                            err)
+            return False
+        port.response = str(response)
+        return True
+
+    def scan_http(self, host: Host, port: Port) -> bool:
+        """Attempt to send a HTTP HEAD request to the given target."""
+        try:
+            schema = "https" if port.port == 443 else "http"
+            scan_url = f"{schema}://{host.addr}:{port.port}/"
+            headers = {
+                "host": host.name,
+                "agent": http_agent,
+            }
+            res = requests.head(scan_url, headers=headers, timeout=5.0)
+        except (requests.RequestException,
+                requests.ConnectionError,
+                requests.HTTPError,
+                requests.Timeout) as err:
+            self.log.error("Failed to scan %s: %s",
+                           scan_url,
+                           err)
+            return False
+        port.response = res.headers["server"]
+        return True
+
+    def scan_dns(self, h: Host, p: Port) -> bool:
+        """Attempt to scan a DNS Server."""
+        res: Resolver = Resolver("", False)
+        res.nameservers = [str(h.addr)]
+
+        try:
+            ans = res.query("version.bind", "TXT", "CH")
+        except DNSException:
+            return False
+
+        if ans.rrset is None or len(ans.rrset) == 0:
+            return False
+
+        name: str = ans.rrset[0].to_text()
+        p.response = name
+        return True
+
+    # Dienstag, 17. 06. 2025, 18:27
+    # The hand-rolled telnet probe I did in C and Go is WAY too complex,
+    # I do not feel like re-implementing that beast in Python right about now,
+    # and I also don't want to drag in another dependency at this time.
+    # Python used to have telnetlib in the standard library, but that has been
+    # removed as of 3.13.
+    # def scan_telnet(self, host: Host, port: Port) -> bool:
+    #     """Attempt to scan a telnet server."""
+    #     try:
+    #         conn = socket.create_connection((str(host.addr), port.port))
+    #         conn.send(bytes(telnet_probe))
+
 
 # Local Variables: #
 # python-indent: 4 #
