@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-16 22:36:12 krylon>
+# Time-stamp: <2025-06-17 19:02:59 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,7 +8,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [3/4]
+* PyKuang [3/5]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -16,13 +16,13 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-16 Mo 22:36]
+   #+CAPTION: Clock summary at [2025-06-17 Di 19:02]
    | Headline                    | Time      |           |       |      |
    |-----------------------------+-----------+-----------+-------+------|
-   | *Total time*                | *1d 7:11* |           |       |      |
+   | *Total time*                | *1d 9:43* |           |       |      |
    |-----------------------------+-----------+-----------+-------+------|
-   | *PyKuang [3/4]*             | *1d 7:11* |           |       |      |
-   | \_  /Components [3/4]/      |           | /1d 7:11/ |       |      |
+   | *PyKuang [3/5]*             | *1d 9:43* |           |       |      |
+   | \_  /Components [3/5]/      |           | /1d 9:43/ |       |      |
    | \_    Configuration [0/0]   |           |           |  0:25 |      |
    | \_    Model [0/0]           |           |           |  0:31 |      |
    | \_    Generator [0/0]       |           |           |  6:25 |      |
@@ -32,7 +32,7 @@
    | \_      Getting stuck much? |           |           |       | 0:20 |
    | \_      Blacklist!          |           |           |       | 0:12 |
    | \_      Ensure Follow-up    |           |           |       | 1:00 |
-   | \_    Scanner [0/0]         |           |           |  6:13 |      |
+   | \_    Scanner [0/1]         |           |           |  8:45 |      |
    #+END:
 ** Journal
 ** Features [0/0]
@@ -40,7 +40,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [3/4]
+** Components [3/5]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -129,14 +129,17 @@
      cases.
      I *thought* I had done that, but the database after a short trial run
      says otherwise. 😞
-*** Scanner [0/0]
+*** Scanner [0/1]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-06-17 Di 17:30]--[2025-06-17 Di 19:02] =>  1:32
+    CLOCK: [2025-06-17 Di 14:36]--[2025-06-17 Di 15:36] =>  1:00
     CLOCK: [2025-06-16 Mo 22:13]--[2025-06-16 Mo 22:36] =>  0:23
     CLOCK: [2025-06-16 Mo 18:04]--[2025-06-16 Mo 21:01] =>  2:57
     CLOCK: [2025-06-15 So 16:48]--[2025-06-15 So 19:41] =>  2:53
     :END:
+**** TODO Telnet
 ** Bugs
