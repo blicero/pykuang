@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 18:41:33 krylon>
+# Time-stamp: <2025-06-17 18:56:04 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -108,7 +108,7 @@ class Scanner:
         self.log = common.get_logger("scanner")
         self.loc = local()
         self.lock = Lock()
-        self.scanq = Queue(cnt)
+        self.scanq = Queue(max(int(cnt/2), 2))
         self._active = False
 
         if cnt == 0:
