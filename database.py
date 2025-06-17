@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 17:40:03 krylon>
+# Time-stamp: <2025-06-17 19:31:41 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -101,6 +101,18 @@ CREATE TRIGGER tr_port_host_ptime
         SET ptime = unixepoch()
         WHERE id = NEW.host_id;
     END
+    """,
+    """
+CREATE VIEW hports AS
+SELECT
+    p.id AS id,
+    h.name AS hostname,
+    h.addr AS addr,
+    p.port_no AS port,
+    datetime(p.timestamp, 'unixepoch') AS timestamp,
+    p.response AS response
+FROM port p
+INNER JOIN host h ON p.host_id = h.id
     """,
 ]
 
