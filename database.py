@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-16 19:29:56 krylon>
+# Time-stamp: <2025-06-17 17:40:03 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -171,7 +171,7 @@ SELECT
     id,
     name,
     addr,
-    source,
+    src,
     atime,
     ptime,
     location,
