@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 17:38:22 krylon>
+# Time-stamp: <2025-06-17 19:24:38 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -111,10 +111,10 @@ class Nexus:
                 z: str = h.zone
                 if z != "":
                     self.xc.queue.put(z)
-            self.log.debug("Got one Host from Generator: ID = %d, name = %s, addr = %s",
-                           h.host_id,
-                           h.name,
-                           h.addr)
+            # self.log.debug("Got one Host from Generator: ID = %d, name = %s, addr = %s",
+            #                h.host_id,
+            #                h.name,
+            #                h.addr)
 
 
 if __name__ == '__main__':
