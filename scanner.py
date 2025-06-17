@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-16 22:35:23 krylon>
+# Time-stamp: <2025-06-17 12:29:30 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -20,14 +20,16 @@ pykuang.scanner
 import logging
 import random
 import re
-from queue import Queue
+import socket
+from ipaddress import IPv6Address
+from queue import Empty, Queue
 from threading import Lock, local
 from typing import Final, Optional
 
 from pykuang import common
 from pykuang.config import Config
 from pykuang.database import Database
-from pykuang.model import Host, HostSource
+from pykuang.model import Host, HostSource, Port
 
 www_pat: Final[re.Pattern] = re.compile("^www", re.I)
 
@@ -165,7 +167,7 @@ class Scanner:
             if isinstance(host.addr, IPv6Address):
                 af = socket.AF_INET6
             # Nah, that isn't quite right, is it?
-            # Go makes that so much easier... Just sayin'
+            # Go makes that so much easier... Just sayin'.
         except OSError as err:
             self.log.error("Failed to connect to %s:%d - %s",
                            host.addr,
