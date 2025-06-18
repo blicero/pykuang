@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 11:05:40 krylon>
+# Time-stamp: <2025-06-18 17:38:23 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -196,6 +196,8 @@ class XFRClient:
                         self.log.debug("Add Host %s/%s to database",
                                        h.name,
                                        h.addr)
+                        if self.net_blacklist.match(h.addr) or self.name_blacklist.match(h.name):
+                            continue
                         try:
                             db.host_add(h)
                         except IntegrityError:
