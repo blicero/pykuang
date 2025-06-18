@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 17:09:55 krylon>
+# Time-stamp: <2025-06-17 20:33:13 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 06. 2025
@@ -88,6 +88,7 @@ name_patterns: Final[list[str]] = [
     "localhost",
     "myvzw\\.com",
     "no-dns(?:-yet)?",
+    "no-data",
     "non-routed",
     "ppp",
     "rr\\.com\\.?$",
