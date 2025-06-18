@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 17:15:34 krylon>
+# Time-stamp: <2025-06-18 11:05:40 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -18,6 +18,8 @@ pykuang.xfr
 
 
 import logging
+import random
+import time
 from datetime import datetime
 from ipaddress import ip_address
 from queue import Empty, Queue, ShutDown
@@ -111,6 +113,7 @@ class XFRClient:
                 return
             except Empty:
                 self.log.debug("XFR Worker %d: Queue is empty", worker_id)
+                time.sleep(random.random() * 5)
                 continue
             with self.db:
                 try:
@@ -158,7 +161,7 @@ class XFRClient:
                 if self.name_blacklist.match(name):
                     continue
                 if node.classify() == NodeKind.REGULAR:
-                    self._process_node(now, name, node)
+                    self._process_node(zone.zone, now, name, node)
             return XfrStatus.OK
         except (EOFError, OSError) as terr:
             self.log.error("XFR of %s failed: %s",
@@ -171,7 +174,7 @@ class XFRClient:
                            cerr)
             return XfrStatus.Refused
 
-    def _process_node(self, now: datetime, name: str, node: Node) -> None:
+    def _process_node(self, zone: str, now: datetime, name: str, node: Node) -> None:
         db = self.db
         for rd in node.rdatasets:
             records = list(rd.items.keys())
@@ -181,17 +184,22 @@ class XFRClient:
 
             for r in records:
                 match r.rdtype:
+                    # XXX I need to assemble the name from the RDATA and the zone I am slurping,
+                    #     so end up with useful hostnames instead of "ns1".
                     case RdataType.A | RdataType.AAAA:
                         if self.net_blacklist.match(r.address):
                             continue
-                        h: Host = Host(name=name,
+                        h: Host = Host(name=f"{name}.{zone}",
                                        addr=ip_address(r.address),
                                        src=HostSource.XFR,
                                        add_stamp=now)
                         self.log.debug("Add Host %s/%s to database",
                                        h.name,
                                        h.addr)
-                        db.host_add(h)
+                        try:
+                            db.host_add(h)
+                        except IntegrityError:
+                            continue
                     case RdataType.MX:
                         self.log.debug("Don't know how to handle MX records, yet.")
                     case RdataType.NS:
