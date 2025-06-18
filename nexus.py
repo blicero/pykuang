@@ -108,6 +108,11 @@ class Nexus:
                 except DBLockError:
                     self.gen.queue.put(h)
                     continue
+                except IntegrityError as ierr:
+                    self.log.error("Failed to add host %s (%s) to database: %s",
+                                   h.name,
+                                   h.addr,
+                                   ierr)
                 z: str = h.zone
                 if z != "":
                     self.xc.queue.put(z)
