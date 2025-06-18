@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 17:11:37 krylon>
+# Time-stamp: <2025-06-18 17:39:24 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -150,12 +150,11 @@ class Generator:  # pylint: disable-msg=R0903
             try:
                 cache[astr] = "True"
                 status = True
-            except sqlite3.error as err:
+            except sqlite3.Error as err:
                 if str(err).endswith("locked"):
                     time.sleep(0.0125)
                     continue
-                else:
-                    raise
+                raise
         return addr
 
     def resolve_name(self, addr: Union[IPv4Address, IPv6Address]) -> Optional[str]:
