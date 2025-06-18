@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-16 19:32:14 krylon>
+# Time-stamp: <2025-06-17 20:01:35 krylon>
 #
 # /data/code/python/pykuang/config.py
 # created on 11. 06. 2025
@@ -36,12 +36,15 @@ default_config: Final[str] = """# Time-stamp: <>
 Resolver = ["10.10.0.1"]
 Parallel = 16
 V6Weight = 0.03125
+Active = true
 
 [XFR]
 Parallel = 4
+Active = true
 
 [Scanner]
 Parallel = 16
+Active = false
 """
 
 open_lock: Final[Lock] = Lock()
