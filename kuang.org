@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-18 17:13:58 krylon>
+# Time-stamp: <2025-06-18 18:06:34 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,7 +8,7 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [3/5]
+* PyKuang [3/7]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
@@ -16,13 +16,13 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-18 Mi 17:13]
+   #+CAPTION: Clock summary at [2025-06-18 Mi 18:06]
    | Headline                    | Time       |            |       |      |
    |-----------------------------+------------+------------+-------+------|
-   | *Total time*                | *1d 11:56* |            |       |      |
+   | *Total time*                | *1d 12:07* |            |       |      |
    |-----------------------------+------------+------------+-------+------|
-   | *PyKuang [3/5]*             | *1d 11:56* |            |       |      |
-   | \_  /Components [3/5]/      |            | /1d 11:56/ |       |      |
+   | *PyKuang [3/7]*             | *1d 12:07* |            |       |      |
+   | \_  /Components [3/7]/      |            | /1d 12:07/ |       |      |
    | \_    Configuration [0/0]   |            |            |  0:38 |      |
    | \_    Model [0/0]           |            |            |  0:31 |      |
    | \_    Generator [0/0]       |            |            |  8:25 |      |
@@ -32,7 +32,7 @@
    | \_      Getting stuck much? |            |            |       | 0:20 |
    | \_      Blacklist!          |            |            |       | 0:12 |
    | \_      Ensure Follow-up    |            |            |       | 1:00 |
-   | \_    Scanner [0/1]         |            |            |  8:45 |      |
+   | \_    Scanner [0/3]         |            |            |  8:56 |      |
    #+END:
 ** Journal
 ** Features [0/0]
@@ -44,7 +44,7 @@
     Given Python's global interpreter lock, I might attempt to use subprocess
     rather than threading. I am not sure how much of a difference that would
     make.
-** Components [3/5]
+** Components [3/7]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -135,12 +135,13 @@
      cases.
      I *thought* I had done that, but the database after a short trial run
      says otherwise. 😞
-*** Scanner [0/1]
+*** Scanner [0/3]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-06-18 Mi 17:55]--[2025-06-18 Mi 18:06] =>  0:11
     CLOCK: [2025-06-17 Di 17:30]--[2025-06-17 Di 19:02] =>  1:32
     CLOCK: [2025-06-17 Di 14:36]--[2025-06-17 Di 15:36] =>  1:00
     CLOCK: [2025-06-16 Mo 22:13]--[2025-06-16 Mo 22:36] =>  0:23
@@ -148,4 +149,7 @@
     CLOCK: [2025-06-15 So 16:48]--[2025-06-15 So 19:41] =>  2:53
     :END:
 **** TODO Telnet
+**** TODO SNMP
+**** TODO LDAP
+*** Web UI [0/0]
 ** Bugs
