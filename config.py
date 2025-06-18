@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 20:01:35 krylon>
+# Time-stamp: <2025-06-18 18:19:19 krylon>
 #
 # /data/code/python/pykuang/config.py
 # created on 11. 06. 2025
@@ -45,6 +45,10 @@ Active = true
 [Scanner]
 Parallel = 16
 Active = false
+
+[Web]
+Port = 4242
+Addr = "::1"
 """
 
 open_lock: Final[Lock] = Lock()
