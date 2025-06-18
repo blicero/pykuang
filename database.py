@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 19:31:41 krylon>
+# Time-stamp: <2025-06-17 20:30:00 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -56,7 +56,7 @@ CREATE TABLE host (
     location TEXT NOT NULL DEFAULT '',
     os TEXT NOT NULL DEFAULT '',
     UNIQUE(name, addr),
-    CHECK (name <> '')
+    CHECK (name LIKE '%.%')
 ) STRICT
 """,
     "CREATE INDEX host_name_idx ON host (name)",
@@ -314,6 +314,8 @@ class Database:
             if msg.find("locked") != -1:
                 self.log.error("Timeout waiting for database lock")
                 raise DBLockError("Timeout waiting for database lock") from oerr
+        except sqlite3.IntegrityError as ierr:
+            raise IntegrityError(f"Failed to add Host {h.name} ({h.addr}): {ierr}") from ierr
         assert cur.lastrowid is not None
         h.host_id = cur.lastrowid
         h.add_stamp = now
