@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-14 17:13:39 krylon>
+# Time-stamp: <2025-06-18 17:11:37 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -19,10 +19,12 @@ pykuang.generator
 
 import dbm
 import logging
+import sqlite3
+import time
 from ipaddress import IPv4Address, IPv6Address, ip_address
 from queue import Queue
 from random import randbytes, random
-from threading import local, Lock, Thread
+from threading import Lock, Thread, local
 from typing import Final, Optional, Union
 
 from dns import rdatatype
@@ -141,7 +143,19 @@ class Generator:  # pylint: disable-msg=R0903
         while (str(addr) in cache) or self.net_blacklist.match(addr):
             addr = ip_address(randbytes(cnt))
 
-        cache[str(addr)] = "True"
+        status: bool = False
+        astr: Final[str] = str(addr)
+
+        while not status:
+            try:
+                cache[astr] = "True"
+                status = True
+            except sqlite3.error as err:
+                if str(err).endswith("locked"):
+                    time.sleep(0.0125)
+                    continue
+                else:
+                    raise
         return addr
 
     def resolve_name(self, addr: Union[IPv4Address, IPv6Address]) -> Optional[str]:
