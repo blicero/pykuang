@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 18:56:04 krylon>
+# Time-stamp: <2025-06-18 18:01:21 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -135,11 +135,14 @@ class Scanner:
 
     def start(self) -> None:
         """Start the Scanner."""
+        self.log.debug("Scanner starting up...")
         with self.lock:
             self._active = True
         fthr = Thread(target=self._feeder, daemon=True)
         fthr.start()
 
+        self.log.debug("Starting %d scanner workers",
+                       self.cnt)
         for i in range(self.cnt):
             wthr = Thread(target=self._worker,
                           daemon=True,
@@ -179,6 +182,7 @@ class Scanner:
         return random.choice(plist)
 
     def _feeder(self) -> None:
+        self.log.debug("Feeder Thread starting up.")
         db = self.db
         while self.active:
             hosts = db.host_get_random(self.cnt)
@@ -215,6 +219,11 @@ class Scanner:
                     case _:
                         result = self.scan_tcp_generic(scan_tuple[0], p)
             except Empty:
+                continue
+            except Exception as err:  # pylint: disable-msg=W0718
+                self.log.error("Unhandled %s while scanning host: %s",
+                               err.__class__.__name__,
+                               err)
                 continue
             else:
                 self.log.debug("Scanned %s:%d - %s (%s)",
