@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 19:24:38 krylon>
+# Time-stamp: <2025-06-17 20:28:04 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -24,7 +24,7 @@ from threading import Lock, Thread
 
 from pykuang import common
 from pykuang.config import Config
-from pykuang.database import Database, DBLockError
+from pykuang.database import Database, DBLockError, IntegrityError
 from pykuang.generator import Generator
 from pykuang.model import Host
 from pykuang.scanner import Scanner
@@ -45,6 +45,9 @@ class Nexus:
         "cnt_gen",
         "cnt_xfr",
         "cnt_scan",
+        "do_gen",
+        "do_xfr",
+        "do_scan",
     ]
 
     log: logging.Logger
@@ -57,11 +60,17 @@ class Nexus:
     cnt_gen: int
     cnt_xfr: int
     cnt_scan: int
+    do_gen: bool
+    do_xfr: bool
+    do_scan: bool
 
     def __init__(self) -> None:
         cfg = Config()
         gen_cnt = cfg.get("Generator", "Parallel")
         xfr_cnt = cfg.get("XFR", "Parallel")
+        self.do_gen: bool = cfg.get("Generator", "Active")
+        self.do_xfr: bool = cfg.get("XFR", "Active")
+        self.do_scan: bool = cfg.get("Scanner", "Active")
 
         self.log = common.get_logger("nexus")
         self.db = Database()
@@ -84,11 +93,14 @@ class Nexus:
         self.log.debug("Starting Nexus...")
         with self.lock:
             self.active_flag = True
-            self.gen.start(self.cnt_gen)
-            gen_thr = Thread(target=self._gatherer, daemon=True)
-            gen_thr.start()
-            self.xc.start(self.cnt_xfr)
-            self.sc.start()
+            if self.do_gen:
+                self.gen.start(self.cnt_gen)
+                gen_thr = Thread(target=self._gatherer, daemon=True)
+                gen_thr.start()
+            if self.do_xfr:
+                self.xc.start(self.cnt_xfr)
+            if self.do_scan:
+                self.sc.start()
 
     def stop(self) -> None:
         """Stop all the moving parts."""
