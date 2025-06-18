@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 18:01:21 krylon>
+# Time-stamp: <2025-06-18 20:54:02 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -54,11 +54,12 @@ def get_af(addr: Union[IPv4Address, IPv6Address]) -> socket.AddressFamily:  # no
 # ]
 
 www_pat: Final[re.Pattern] = re.compile("^www", re.I)
+byte_pat: Final[re.Pattern] = re.compile(r"^b'([^']*)'$")
 
 interesting_ports: Final[list[int]] = [
     21,
     22,
-    23,
+    # 23,
     25,
     53,
     79,
@@ -246,7 +247,11 @@ class Scanner:
                            port.port,
                            err)
             return False
+        # TODO Clean up response strings like b'blablabla'
         port.response = str(response)
+        m = byte_pat.search(port.response)
+        if m is not None:
+            port.response = m[1].strip()
         return True
 
     def scan_http(self, host: Host, port: Port) -> bool:
