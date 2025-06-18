@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 20:28:04 krylon>
+# Time-stamp: <2025-06-18 17:53:12 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -93,14 +93,14 @@ class Nexus:
         self.log.debug("Starting Nexus...")
         with self.lock:
             self.active_flag = True
-            if self.do_gen:
-                self.gen.start(self.cnt_gen)
-                gen_thr = Thread(target=self._gatherer, daemon=True)
-                gen_thr.start()
-            if self.do_xfr:
-                self.xc.start(self.cnt_xfr)
-            if self.do_scan:
-                self.sc.start()
+        if self.do_gen:
+            self.gen.start(self.cnt_gen)
+            gen_thr = Thread(target=self._gatherer, daemon=True)
+            gen_thr.start()
+        if self.do_xfr:
+            self.xc.start(self.cnt_xfr)
+        if self.do_scan:
+            self.sc.start()
 
     def stop(self) -> None:
         """Stop all the moving parts."""
