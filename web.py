@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 18:26:04 krylon>
+# Time-stamp: <2025-06-18 20:55:10 krylon>
 #
 # /data/code/python/pykuang/web.py
 # created on 18. 06. 2025
@@ -25,6 +25,7 @@ from threading import Lock
 from typing import Final
 
 import bottle
+from bottle import response, route
 from jinja2 import Environment, FileSystemLoader
 
 from pykuang import common, config
@@ -88,7 +89,7 @@ class WebUI:
         else:
             self.tmpl_root = root
 
-        self.env = Environment(loader=FileSystemLoader(os.path.join(self.root, "templates")))
+        self.env = Environment(loader=FileSystemLoader(os.path.join(self.tmpl_root, "templates")))
         self.env.globals = {
             "dbg": common.DEBUG,
             "app_string": f"{common.APP_NAME} {common.APP_VERSION}",
@@ -96,6 +97,7 @@ class WebUI:
         }
 
         bottle.debug(common.DEBUG)
+        route("/main", callback=self.main)
 
     def _tmpl_vars(self) -> dict:
         """Return a dict with a few default variables filled in already."""
@@ -110,6 +112,21 @@ class WebUI:
     def run(self) -> None:
         """Run the web server."""
         bottle.run(host=self.addr, port=self.port, debug=common.DEBUG)
+
+    def main(self) -> str:
+        """Presents the landing page."""
+        try:
+            # db: Database = Database()
+            response.set_header("Cache-Control", "no-store, max-age=0")
+            tmpl = self.env.get_template("main.jinja")
+            tmpl_vars = self._tmpl_vars()
+            tmpl_vars["title"] = f"{common.APP_NAME} {common.APP_VERSION} - Main"
+            tmpl_vars["year"] = datetime.now().year
+            # tmpl_vars["hosts"] = db.host_get_all()
+            return tmpl.render(tmpl_vars)
+        finally:
+            pass
+            # db.close()
 
 # Local Variables: #
 # python-indent: 4 #
