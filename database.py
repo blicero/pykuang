@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-17 20:30:00 krylon>
+# Time-stamp: <2025-06-19 16:06:45 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -128,15 +128,18 @@ class qid(IntEnum):
     HostGetByAddr = auto()
     HostGetRandom = auto()
     HostGetAll = auto()
+    HostCount = auto()
     PortAdd = auto()
     PortGetByHost = auto()
     PortGetByPort = auto()
     PortGetRecent = auto()
+    PortCount = auto()
     XfrAdd = auto()
     XfrEnd = auto()
     XfrGetByZone = auto()
     XfrGetAll = auto()
     XfrGetUnfinished = auto()
+    XfrCount = auto()
 
 
 qdb: Final[dict[qid, str]] = {
@@ -192,6 +195,7 @@ FROM host
 LIMIT ?
 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
     """,
+    qid.HostCount: "SELECT COUNT(id) FROM host",
     qid.XfrAdd: "INSERT INTO xfr (zone, begin, status) VALUES (?, ?, ?)",
     qid.XfrEnd: "UPDATE xfr SET end = ?, status = ? WHERE id = ?",
     qid.XfrGetByZone: """
@@ -221,6 +225,11 @@ SELECT
 FROM xfr
 WHERE end IS NULL
     """,
+    qid.XfrCount: """
+SELECT
+    (SELECT COUNT(id) FROM xfr WHERE end IS NULL) AS unfinished,
+    (SELECT COUNT(id) FROM xfr WHERE end IS NOT NULL) AS finished
+    """,
     qid.PortAdd: "INSERT INTO port (host_id, port_no, timestamp, response) VALUES (?, ?, ?, ?)",
     qid.PortGetByHost: """
 SELECT
@@ -241,6 +250,11 @@ SELECT
 FROM port
 WHERE port_no = ?
 ORDER BY timestamp
+    """,
+    qid.PortCount: """
+SELECT
+    (SELECT COUNT(id) FROM port WHERE response IS NULL) AS no_reply,
+    (SELECT COUNT(id) FROM port WHERE response IS NOT NULL) AS success
     """,
 }
 
@@ -388,6 +402,13 @@ class Database:
 
         return hosts
 
+    def host_cnt(self) -> int:
+        """Return the number of Hosts in the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostCount])
+        row = cur.fetchone()
+        return row[0]
+
     def xfr_add(self, zone: str) -> Optional[Xfr]:
         """Register a DNS zone to be transferred in the database."""
         now = datetime.now()
@@ -451,6 +472,13 @@ class Database:
             zones.append(req)
         return zones
 
+    def xfr_cnt(self) -> tuple[int, int]:
+        """Return a 2-tuple of the numbers of unfinished and finished XFRs in the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.XfrCount])
+        row = cur.fetchone()
+        return (row[0], row[1])
+
     def port_add(self, port: Port) -> None:
         """Add a freshly scanned port to the database."""
         cur = self.db.cursor()
@@ -489,6 +517,13 @@ class Database:
                      response=row[3])
             ports.append(p)
         return ports
+
+    def port_cnt(self) -> tuple[int, int]:
+        """Return a 2-tuple of the numbers of scanned ports without and with a response."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.PortCount])
+        row = cur.fetchone()
+        return (row[0], row[1])
 
 # Local Variables: #
 # python-indent: 4 #
