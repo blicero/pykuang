@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 17:53:12 krylon>
+# Time-stamp: <2025-06-19 16:02:52 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -28,6 +28,7 @@ from pykuang.database import Database, DBLockError, IntegrityError
 from pykuang.generator import Generator
 from pykuang.model import Host
 from pykuang.scanner import Scanner
+from pykuang.web import WebUI
 from pykuang.xfr import XFRClient
 
 
@@ -48,6 +49,8 @@ class Nexus:
         "do_gen",
         "do_xfr",
         "do_scan",
+        "do_www",
+        "www",
     ]
 
     log: logging.Logger
@@ -63,14 +66,17 @@ class Nexus:
     do_gen: bool
     do_xfr: bool
     do_scan: bool
+    do_www: bool
+    www: WebUI
 
     def __init__(self) -> None:
         cfg = Config()
         gen_cnt = cfg.get("Generator", "Parallel")
         xfr_cnt = cfg.get("XFR", "Parallel")
-        self.do_gen: bool = cfg.get("Generator", "Active")
-        self.do_xfr: bool = cfg.get("XFR", "Active")
-        self.do_scan: bool = cfg.get("Scanner", "Active")
+        self.do_gen = cfg.get("Generator", "Active")
+        self.do_xfr = cfg.get("XFR", "Active")
+        self.do_scan = cfg.get("Scanner", "Active")
+        self.do_www = cfg.get("Web", "Active")
 
         self.log = common.get_logger("nexus")
         self.db = Database()
@@ -81,6 +87,7 @@ class Nexus:
         self.sc = Scanner()
         self.cnt_gen = gen_cnt
         self.cnt_xfr = xfr_cnt
+        self.www = WebUI()
 
     @property
     def active(self) -> bool:
@@ -101,6 +108,9 @@ class Nexus:
             self.xc.start(self.cnt_xfr)
         if self.do_scan:
             self.sc.start()
+        if self.do_www:
+            www_thr = Thread(target=self.www.run)
+            www_thr.start()
 
     def stop(self) -> None:
         """Stop all the moving parts."""
