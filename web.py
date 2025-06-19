@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 20:55:10 krylon>
+# Time-stamp: <2025-06-19 16:18:39 krylon>
 #
 # /data/code/python/pykuang/web.py
 # created on 18. 06. 2025
@@ -16,19 +16,21 @@ pykuang.web
 (c) 2025 Benjamin Walkenhorst
 """
 
+import json
 import logging
 import os
 import re
 import socket
 from datetime import datetime
 from threading import Lock
-from typing import Final
+from typing import Any, Final
 
 import bottle
 from bottle import response, route
 from jinja2 import Environment, FileSystemLoader
 
 from pykuang import common, config
+from pykuang.database import Database
 
 mime_types: Final[dict[str, str]] = {
     ".css":  "text/css",
@@ -62,7 +64,7 @@ class WebUI:
 
     __slots__ = [
         "log",
-        "tmpl_root",
+        "root",
         "lock",
         "env",
         "addr",
@@ -70,7 +72,7 @@ class WebUI:
     ]
 
     log: logging.Logger
-    tmpl_root: str
+    root: str
     lock: Lock
     env: Environment
     addr: str
@@ -85,11 +87,11 @@ class WebUI:
         self.port = cfg.get("Web", "Port")
 
         if root == "":
-            self.tmpl_root = os.path.join(".", "assets")
+            self.root = os.path.join(".", "assets")
         else:
-            self.tmpl_root = root
+            self.root = root
 
-        self.env = Environment(loader=FileSystemLoader(os.path.join(self.tmpl_root, "templates")))
+        self.env = Environment(loader=FileSystemLoader(os.path.join(self.root, "templates")))
         self.env.globals = {
             "dbg": common.DEBUG,
             "app_string": f"{common.APP_NAME} {common.APP_VERSION}",
@@ -98,6 +100,9 @@ class WebUI:
 
         bottle.debug(common.DEBUG)
         route("/main", callback=self.main)
+        route("/ajax/beacon", callback=self.handle_beacon)
+        route("/static/<path>", callback=self.staticfile)
+        route("/favicon.ico", callback=self.handle_favicon)
 
     def _tmpl_vars(self) -> dict:
         """Return a dict with a few default variables filled in already."""
@@ -116,17 +121,64 @@ class WebUI:
     def main(self) -> str:
         """Presents the landing page."""
         try:
-            # db: Database = Database()
+            db: Database = Database()
             response.set_header("Cache-Control", "no-store, max-age=0")
             tmpl = self.env.get_template("main.jinja")
             tmpl_vars = self._tmpl_vars()
             tmpl_vars["title"] = f"{common.APP_NAME} {common.APP_VERSION} - Main"
             tmpl_vars["year"] = datetime.now().year
+            tmpl_vars["host_cnt"] = db.host_cnt()
+            tmpl_vars["xfr_cnt"] = db.xfr_cnt()
+            tmpl_vars["port_cnt"] = db.port_cnt()
             # tmpl_vars["hosts"] = db.host_get_all()
             return tmpl.render(tmpl_vars)
         finally:
-            pass
-            # db.close()
+            db.close()
+
+    # Static files
+
+    def handle_favicon(self) -> bytes:
+        """Handle the request for the favicon."""
+        path: Final[str] = os.path.join(self.root, "static", "favicon.ico")
+        with open(path, "rb") as fh:
+            response.set_header("Content-Type", "image/vnd.microsoft.icon")
+            response.set_header("Cache-Control",
+                                "no-store, max-age=0" if common.DEBUG else "max-age=7200")
+            return fh.read()
+
+    def staticfile(self, path) -> bytes:
+        """Return one of the static files."""
+        # TODO Determine MIME type?
+        #      Set caching header?
+        mtype = find_mime_type(path)
+        response.set_header("Content-Type", mtype)
+        response.set_header("Cache-Control",
+                            "no-store, max-age=0" if common.DEBUG else "max-age=7200")
+
+        full_path = os.path.join(self.root, "static", path)
+        if not os.path.isfile(full_path):
+            self.log.error("Static file %s was not found", path)
+            response.status = 404
+            return b''
+        with open(full_path, "rb") as fh:
+            return fh.read()
+
+    # AJAX Handlers
+
+    def handle_beacon(self) -> str:
+        """Handle the AJAX call for the beacon."""
+        jdata: dict[str, Any] = {
+            "Status": True,
+            "Message": common.APP_NAME,
+            "Timestamp": datetime.now().strftime(common.TIME_FMT),
+            "Hostname": socket.gethostname(),
+        }
+
+        response.set_header("Content-Type", "application/json")
+        response.set_header("Cache-Control", "no-store, max-age=0")
+
+        return json.dumps(jdata)
+
 
 # Local Variables: #
 # python-indent: 4 #

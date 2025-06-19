@@ -2,8 +2,12 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!-- Time-stamp: "2025-06-18 18:29:34 krylon" -->
-    <title>{% block title %}{% endblock %}</title>
+    <!-- Time-stamp: "2025-06-19 16:16:32 krylon" -->
+    <title>
+      {% block title %}
+        {{ title }}
+      {% endblock %}
+    </title>
 
     <meta charset="utf-8" />
     <link rel="stylesheet" href="/static/bootstrap.min.css" />
@@ -42,6 +46,20 @@
 
     <div class="content">
       {% block content %}
+        <table class="table horizontal">
+          <tr>
+            <th>Hosts</th>
+            <td>{{ host_cnt }}</td>
+          </tr>
+          <tr>
+            <th>Ports</th>
+            <td>{{ port_cnt[0]}} (No response) / {{ port_cnt[1] }} (Not no response)</td>
+          </tr>
+          <tr>
+            <th>XFR</th>
+            <td>{{ xfr_cnt[0] }} (Unfinished) / {{ xfr_cnt[1] }} (Finished)</td>
+          </tr>
+        </table>
       {% endblock %}
     </div>
     
