@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-19 16:18:39 krylon>
+# Time-stamp: <2025-06-20 17:54:28 krylon>
 #
 # /data/code/python/pykuang/web.py
 # created on 18. 06. 2025
@@ -23,7 +23,7 @@ import re
 import socket
 from datetime import datetime
 from threading import Lock
-from typing import Any, Final
+from typing import Any, Final, Union
 
 import bottle
 from bottle import response, route
@@ -31,6 +31,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from pykuang import common, config
 from pykuang.database import Database
+from pykuang.model import Host
 
 mime_types: Final[dict[str, str]] = {
     ".css":  "text/css",
@@ -100,7 +101,12 @@ class WebUI:
 
         bottle.debug(common.DEBUG)
         route("/main", callback=self.main)
+        route("/by_port", callback=self.handle_by_port)
+
+        # AJAX handlers
         route("/ajax/beacon", callback=self.handle_beacon)
+
+        # Static files
         route("/static/<path>", callback=self.staticfile)
         route("/favicon.ico", callback=self.handle_favicon)
 
@@ -132,6 +138,37 @@ class WebUI:
             tmpl_vars["port_cnt"] = db.port_cnt()
             # tmpl_vars["hosts"] = db.host_get_all()
             return tmpl.render(tmpl_vars)
+        finally:
+            db.close()
+
+    def handle_by_port(self) -> Union[bytes, str]:
+        """Present the overview by port."""
+        try:
+            db: Database = Database()
+            ports = db.port_get_scanned()
+            hosts: dict[int, Host] = {}
+
+            for p in ports:
+                if p.host_id not in hosts:
+                    h = db.host_get_by_id(p.host_id)
+                    if h is None:
+                        self.log.error("CANTHAPPEN Host #%d was not found in database",
+                                       p.host_id)
+                    assert h is not None
+                    hosts[p.host_id] = h
+
+            ports.sort(key=lambda p: p.port)
+
+            tmpl = self.env.get_template("by_port.jinja")
+            tvars = self._tmpl_vars()
+            tvars["title"] = "By Port"
+            tvars["year"] = datetime.now().year
+            tvars["ports"] = ports
+            tvars["hosts"] = hosts
+
+            response.set_header("Cache-Control", "no-store, max-age=0")
+            return tmpl.render(tvars)
+
         finally:
             db.close()
 

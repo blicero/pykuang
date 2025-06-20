@@ -1,0 +1,33 @@
+{# -*- mode: jinja2; coding: utf-8; -*-
+Time-stamp: <2025-06-20 17:53:36 krylon>
+/data/code/python/pykuang/assets/templates/by_port.jinja
+created on 20. 06. 2025
+(c) 2025 Benjamin Walkenhorst
+ #}
+
+{% extends "main.jinja" %}
+
+{% block content %}
+  <table class="table table-striped">
+    <thead>
+      <th>ID</th>
+      <th>Host</th>
+      <th>Port</th>
+      <th>Time</th>
+      <th>Response</th>
+    </thead>
+
+    <tbody>
+      {% for p in ports %}
+        <tr>
+          <td>{{ p.pid }}</td>
+          <td>{{ hosts[p.host_id].name }} ({{ hosts[p.host_id].addr }})</td>
+          <td>{{ p.port }}</td>
+          <td>{{ p.stampstr }}</td>
+          <td>{{ p.cleanresponse }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
