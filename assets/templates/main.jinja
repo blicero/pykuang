@@ -2,12 +2,8 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <!-- Time-stamp: "2025-06-19 16:16:32 krylon" -->
-    <title>
-      {% block title %}
-        {{ title }}
-      {% endblock %}
-    </title>
+    <!-- Time-stamp: "2025-06-20 11:00:34 krylon" -->
+    <title>{% block title %}{{- title -}}{% endblock %}</title>
 
     <meta charset="utf-8" />
     <link rel="stylesheet" href="/static/bootstrap.min.css" />
