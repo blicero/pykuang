@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-06-19 10:54:13 krylon>
+# Time-stamp: <2025-06-20 18:01:34 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -16,13 +16,13 @@
   A randomized portscanner, sort of.
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-06-19 Do 10:52]
+   #+CAPTION: Clock summary at [2025-06-20 Fr 18:01]
    | Headline                    | Time       |            |       |      |
    |-----------------------------+------------+------------+-------+------|
-   | *Total time*                | *1d 14:18* |            |       |      |
+   | *Total time*                | *1d 15:51* |            |       |      |
    |-----------------------------+------------+------------+-------+------|
-   | *PyKuang [3/7]*             | *1d 14:18* |            |       |      |
-   | \_  /Components [3/7]/      |            | /1d 14:18/ |       |      |
+   | *PyKuang [3/7]*             | *1d 15:51* |            |       |      |
+   | \_  /Components [3/7]/      |            | /1d 15:51/ |       |      |
    | \_    Configuration [0/0]   |            |            |  0:38 |      |
    | \_    Model [0/0]           |            |            |  0:31 |      |
    | \_    Generator [0/0]       |            |            |  8:25 |      |
@@ -33,6 +33,7 @@
    | \_      Blacklist!          |            |            |       | 0:12 |
    | \_      Ensure Follow-up    |            |            |       | 1:00 |
    | \_    Scanner [0/3]         |            |            | 10:15 |      |
+   | \_    Web UI [0/0]          |            |            |  1:33 |      |
    #+END:
 ** Journal
 ** Features [0/0]
@@ -156,6 +157,7 @@
 **** TODO LDAP
 *** Web UI [0/0]
     :LOGBOOK:
+    CLOCK: [2025-06-20 Fr 16:30]--[2025-06-20 Fr 18:01] =>  1:31
     CLOCK: [2025-06-19 Do 10:52]--[2025-06-19 Do 10:54] =>  0:02
     :END:
 ** Bugs
