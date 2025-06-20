@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-16 18:51:29 krylon>
+# Time-stamp: <2025-06-20 17:43:45 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 07. 06. 2025
@@ -23,6 +23,8 @@ from datetime import datetime
 from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
 from typing import Final, Optional, Union
+
+from pykuang import common
 
 zone_pat: Final[re.Pattern] = re.compile(r"^[^.]+[.](.*)$")
 
@@ -81,6 +83,9 @@ class Xfr:
     status: XfrStatus = XfrStatus.Blank
 
 
+bpat: Final[re.Pattern] = re.compile(r"^b'([^']+)'$")
+
+
 @dataclass(slots=True, kw_only=True)
 class Port:
     """Port represents a scanned Port. Duh."""
@@ -90,6 +95,23 @@ class Port:
     port: int
     timestamp: datetime = field(default_factory=datetime.now)
     response: Optional[str] = None
+
+    @property
+    def stampstr(self) -> str:
+        """Return a human readable string of the Port's timestamp."""
+        return self.timestamp.strftime(common.TIME_FMT)
+
+    @property
+    def cleanresponse(self) -> str:
+        """Return a slightly sanitized version of the Port's response."""
+        res: str = "(NULL)"
+        if self.response is not None:
+            res = self.response
+
+        m = bpat.search(self.response)
+        if m is not None:
+            res = m[1]
+        return res.strip()
 
 
 # Local Variables: #
