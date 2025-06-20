@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 17:38:23 krylon>
+# Time-stamp: <2025-06-20 17:50:15 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 06. 2025
@@ -106,32 +106,35 @@ class XFRClient:
             self.queue.shutdown()
 
     def _run(self, worker_id: int) -> None:
-        while self.active:
-            try:
-                zone: str = self.queue.get(timeout=5)
-            except ShutDown:
-                return
-            except Empty:
-                self.log.debug("XFR Worker %d: Queue is empty", worker_id)
-                time.sleep(random.random() * 5)
-                continue
-            with self.db:
+        try:
+            while self.active:
                 try:
-                    req = self.db.xfr_add(zone)
-                except DBLockError:
-                    self.queue.put(zone)
+                    zone: str = self.queue.get(timeout=5)
+                except ShutDown:
+                    return
+                except Empty:
+                    self.log.debug("XFR Worker %d: Queue is empty", worker_id)
+                    time.sleep(random.random() * 5)
                     continue
-                except IntegrityError:
-                    req = self.db.xfr_get_by_zone(zone)
-                    if req is not None and req.status in (XfrStatus.Refused,
-                                                          XfrStatus.Duplicate,
-                                                          XfrStatus.Failed,
-                                                          XfrStatus.OK):
+                with self.db:
+                    try:
+                        req = self.db.xfr_add(zone)
+                    except DBLockError:
+                        self.queue.put(zone)
                         continue
-                assert req is not None
-                self.log.debug("About to start XFRing zone %s (%d)", req.zone, req.xid)
-                status = self._perform_xfr(req)
-                self.db.xfr_end(req, status)
+                    except IntegrityError:
+                        req = self.db.xfr_get_by_zone(zone)
+                        if req is not None and req.status in (XfrStatus.Refused,
+                                                              XfrStatus.Duplicate,
+                                                              XfrStatus.Failed,
+                                                              XfrStatus.OK):
+                            continue
+                    assert req is not None
+                    self.log.debug("About to start XFRing zone %s (%d)", req.zone, req.xid)
+                    status = self._perform_xfr(req)
+                    self.db.xfr_end(req, status)
+        finally:
+            self.log.debug("XFR Worker %d says Hasta La Vista", worker_id)
 
     def _perform_xfr(self, zone: Xfr) -> XfrStatus:
         self.log.debug("Attempting XFR of zone %s", zone.zone)

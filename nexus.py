@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-19 16:02:52 krylon>
+# Time-stamp: <2025-06-20 17:51:28 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 06. 2025
@@ -20,6 +20,7 @@ pykuang.nexus
 import logging
 import sys
 import time
+from queue import ShutDown
 from threading import Lock, Thread
 
 from pykuang import common
@@ -109,7 +110,7 @@ class Nexus:
         if self.do_scan:
             self.sc.start()
         if self.do_www:
-            www_thr = Thread(target=self.www.run)
+            www_thr = Thread(target=self.www.run, daemon=True)
             www_thr.start()
 
     def stop(self) -> None:
@@ -123,7 +124,10 @@ class Nexus:
 
     def _gatherer(self) -> None:
         while self.active:
-            h: Host = self.gen.queue.get()
+            try:
+                h: Host = self.gen.queue.get()
+            except ShutDown:
+                return
             with self.db:
                 try:
                     self.db.host_add(h)
@@ -137,7 +141,10 @@ class Nexus:
                                    ierr)
                 z: str = h.zone
                 if z != "":
-                    self.xc.queue.put(z)
+                    try:
+                        self.xc.queue.put(z)
+                    except ShutDown:
+                        return
             # self.log.debug("Got one Host from Generator: ID = %d, name = %s, addr = %s",
             #                h.host_id,
             #                h.name,
@@ -152,6 +159,7 @@ if __name__ == '__main__':
             time.sleep(1)
     except KeyboardInterrupt:
         print("Bye Bye")
+        nex.stop()
         sys.exit(0)
 
 # Local Variables: #

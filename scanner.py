@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 20:54:02 krylon>
+# Time-stamp: <2025-06-20 17:48:59 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 15. 06. 2025
@@ -23,7 +23,7 @@ import re
 import socket
 import time
 from ipaddress import IPv4Address, IPv6Address
-from queue import Empty, Queue
+from queue import Empty, Queue, ShutDown
 from threading import Lock, Thread, local
 from typing import Final, Optional, Union
 
@@ -155,7 +155,7 @@ class Scanner:
         """Clear the Scanner's active flag, shutdown the queue."""
         with self.lock:
             self._active = False
-            # self.scanq.shutdown()
+            self.scanq.shutdown()
 
     def get_scan_port(self, host: Host, ports: set[int]) -> Optional[int]:
         """Get a semi-random port to scan on the given Host."""
@@ -185,55 +185,66 @@ class Scanner:
     def _feeder(self) -> None:
         self.log.debug("Feeder Thread starting up.")
         db = self.db
-        while self.active:
-            hosts = db.host_get_random(self.cnt)
-            for h in hosts:
-                self.log.debug("Looking for scannable port for Host %d, aka %s (%s)",
-                               h.host_id,
-                               h.name,
-                               h.addr)
-                plist = db.port_get_by_host(h)
-                ports: set[int] = {p.port for p in plist}  # noqa: F841
-                target: Optional[int] = self.get_scan_port(h, ports)
-                if target is not None:
-                    self.log.debug("Attempting to scan Host %s (%s) Port %d",
+        try:
+            while self.active:
+                hosts = db.host_get_random(self.cnt)
+                for h in hosts:
+                    self.log.debug("Looking for scannable port for Host %d, aka %s (%s)",
+                                   h.host_id,
                                    h.name,
-                                   h.addr,
-                                   target)
-                    self.scanq.put((h, target))
-            time.sleep(1.0)
+                                   h.addr)
+                    plist = db.port_get_by_host(h)
+                    ports: set[int] = {p.port for p in plist}  # noqa: F841
+                    target: Optional[int] = self.get_scan_port(h, ports)
+                    if target is not None:
+                        self.log.debug("Attempting to scan Host %s (%s) Port %d",
+                                       h.name,
+                                       h.addr,
+                                       target)
+                        try:
+                            self.scanq.put((h, target))
+                        except ShutDown:
+                            return
+                time.sleep(1.0)
+        finally:
+            self.log.debug("Feeder thread says bye bye")
 
     def _worker(self, wid: int) -> None:
         self.log.debug("Scanner Worker %d starting up", wid)
-        while self.active:
-            try:
-                scan_tuple = self.scanq.get(timeout=10)
-                p = Port(host_id=scan_tuple[0].host_id,
-                         port=scan_tuple[1])
-                result: bool = False
+        try:
+            while self.active:
+                try:
+                    scan_tuple = self.scanq.get(timeout=10)
+                    p = Port(host_id=scan_tuple[0].host_id,
+                             port=scan_tuple[1])
+                    result: bool = False
 
-                match scan_tuple[1]:
-                    case 80 | 443 | 8080 | 8081 | 1024:
-                        result = self.scan_http(scan_tuple[0], p)
-                    case 53:
-                        result = self.scan_dns(scan_tuple[0], p)
-                    case _:
-                        result = self.scan_tcp_generic(scan_tuple[0], p)
-            except Empty:
-                continue
-            except Exception as err:  # pylint: disable-msg=W0718
-                self.log.error("Unhandled %s while scanning host: %s",
-                               err.__class__.__name__,
-                               err)
-                continue
-            else:
-                self.log.debug("Scanned %s:%d - %s (%s)",
-                               scan_tuple[0].addr,
-                               p.port,
-                               p.response,
-                               result)
-                with self.db:
-                    self.db.port_add(p)
+                    match scan_tuple[1]:
+                        case 80 | 443 | 8080 | 8081 | 1024:
+                            result = self.scan_http(scan_tuple[0], p)
+                        case 53:
+                            result = self.scan_dns(scan_tuple[0], p)
+                        case _:
+                            result = self.scan_tcp_generic(scan_tuple[0], p)
+                except Empty:
+                    continue
+                except ShutDown:
+                    return
+                except Exception as err:  # pylint: disable-msg=W0718
+                    self.log.error("Unhandled %s while scanning host: %s",
+                                   err.__class__.__name__,
+                                   err)
+                    continue
+                else:
+                    self.log.debug("Scanned %s:%d - %s (%s)",
+                                   scan_tuple[0].addr,
+                                   p.port,
+                                   p.response,
+                                   result)
+                    with self.db:
+                        self.db.port_add(p)
+        finally:
+            self.log.debug("Scanner Worker %d says toodles!", wid)
 
     def scan_tcp_generic(self, host: Host, port: Port) -> bool:
         """Attempt to establish a TCP connection to the given host and port."""
@@ -281,7 +292,7 @@ class Scanner:
         res.nameservers = [str(h.addr)]
 
         try:
-            ans = res.query("version.bind", "TXT", "CH")
+            ans = res.resolve("version.bind", "TXT", "CH")
         except DNSException:
             return False
 

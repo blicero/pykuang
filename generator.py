@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-18 17:39:24 krylon>
+# Time-stamp: <2025-06-20 17:52:02 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 07. 06. 2025
@@ -107,6 +107,7 @@ class Generator:  # pylint: disable-msg=R0903
         """Clear the Generator's active flag."""
         with self.lock:
             self.active_flag = False
+        self.queue.shutdown()
 
     def start(self, cnt: int = -1) -> None:
         """Start the Generator."""
