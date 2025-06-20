@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-06-19 16:06:45 krylon>
+# Time-stamp: <2025-06-20 17:20:01 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 07. 06. 2025
@@ -113,6 +113,7 @@ SELECT
     p.response AS response
 FROM port p
 INNER JOIN host h ON p.host_id = h.id
+WHERE p.response IS NOT NULL
     """,
 ]
 
@@ -124,6 +125,7 @@ class qid(IntEnum):
     HostAdd = auto()
     HostSetLocation = auto()
     HostSetOS = auto()
+    HostGetByID = auto()
     HostGetByName = auto()
     HostGetByAddr = auto()
     HostGetRandom = auto()
@@ -134,6 +136,7 @@ class qid(IntEnum):
     PortGetByPort = auto()
     PortGetRecent = auto()
     PortCount = auto()
+    PortGetScanned = auto()
     XfrAdd = auto()
     XfrEnd = auto()
     XfrGetByZone = auto()
@@ -146,6 +149,17 @@ qdb: Final[dict[qid, str]] = {
     qid.HostAdd: "INSERT INTO host (name, addr, src, atime) VALUES (?, ?, ?, ?)",
     qid.HostSetLocation: "UPDATE host SET location = ? WHERE id = ?",
     qid.HostSetOS: "UPDATE host SET os = ? WHERE id = ?",
+    qid.HostGetByID: """
+SELECT
+    name,
+    addr,
+    src,
+    atime,
+    ptime,
+    location,
+    os
+FROM host WHERE id = ?
+    """,
     qid.HostGetByName: """
 SELECT
     id,
@@ -256,6 +270,16 @@ SELECT
     (SELECT COUNT(id) FROM port WHERE response IS NULL) AS no_reply,
     (SELECT COUNT(id) FROM port WHERE response IS NOT NULL) AS success
     """,
+    qid.PortGetScanned: """
+SELECT
+    id,
+    host_id,
+    port_no,
+    timestamp,
+    response
+FROM port
+WHERE response IS NOT NULL
+    """,
 }
 
 
@@ -345,6 +369,23 @@ class Database:
         cur = self.db.cursor()
         cur.execute(qdb[qid.HostSetOS], (os, h.host_id))
         h.os = os
+
+    def host_get_by_id(self, host_id: int) -> Optional[Host]:
+        """Look up a Host by its ID."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.HostGetByID], (host_id, ))
+        row = cur.fetchone()
+        if row is None:
+            return None
+        h: Host = Host(host_id=host_id,
+                       name=row[0],
+                       addr=ip_address(row[1]),
+                       src=HostSource(row[2]),
+                       add_stamp=datetime.fromtimestamp(row[3]),
+                       scan_stamp=(datetime.fromtimestamp(row[4]) if row[4] is not None else None),
+                       location=row[5],
+                       os=row[6])
+        return h
 
     def host_get_by_name(self, name: str) -> Optional[Host]:
         """Look up a Host by its name."""
@@ -524,6 +565,24 @@ class Database:
         cur.execute(qdb[qid.PortCount])
         row = cur.fetchone()
         return (row[0], row[1])
+
+    def port_get_scanned(self) -> list[Port]:
+        """Get all ports that have been successfully scanned from the database."""
+        cur = self.db.cursor()
+        cur.execute(qdb[qid.PortGetScanned])
+        ports: list[Port] = []
+
+        for row in cur:
+            p: Port = Port(
+                pid=row[0],
+                host_id=row[1],
+                port=row[2],
+                timestamp=datetime.fromtimestamp(row[3]),
+                response=row[4],
+            )
+            ports.append(p)
+
+        return ports
 
 # Local Variables: #
 # python-indent: 4 #
