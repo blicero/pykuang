@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-05 16:12:32 krylon>
+# Time-stamp: <2025-12-06 17:44:07 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -30,7 +30,7 @@ class Host:
     name: str
     addr: Union[IPv4Address, IPv6Address]
     added: datetime
-    last_contact: Optional[datetime]
+    last_contact: Optional[datetime] = None
     sysname: str = ""
     location: str = ""
 
