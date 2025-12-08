@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-05 15:42:42 krylon>
+# Time-stamp: <2025-12-05 16:07:20 krylon>
 #
 # /data/code/python/headlines/src/headlines/common.py
 # created on 30. 09. 2025
@@ -126,8 +126,8 @@ def get_logger(name: str, terminal: bool = True) -> logging.Logger:
 
         log_format = "%(asctime)s (%(name)-16s / line %(lineno)-4d) " + \
             "- %(levelname)-8s %(message)s"
-        max_log_size = 256 * 2**20
-        max_log_count = 4
+        max_log_size = 4 * 2**20  # 4 MiB
+        max_log_count = 10
 
         log_obj = logging.getLogger(name)
         log_obj.setLevel(logging.DEBUG)
