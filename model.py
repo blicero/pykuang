@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-06 17:44:07 krylon>
+# Time-stamp: <2025-12-10 15:36:30 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -16,7 +16,7 @@ pykuang.model
 (c) 2025 Benjamin Walkenhorst
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
 from typing import Optional, Union
@@ -29,7 +29,7 @@ class Host:
     host_id: int = -1
     name: str
     addr: Union[IPv4Address, IPv6Address]
-    added: datetime
+    added: datetime = field(default_factory=datetime.now)
     last_contact: Optional[datetime] = None
     sysname: str = ""
     location: str = ""
