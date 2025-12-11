@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-10 16:19:27 krylon>
+# Time-stamp: <2025-12-11 15:57:06 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -15,17 +15,17 @@
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-10 Mi 16:19]
+   #+CAPTION: Clock summary at [2025-12-11 Do 15:57]
    | Headline               | Time    |         |      |
    |------------------------+---------+---------+------|
-   | *Total time*           | *10:34* |         |      |
+   | *Total time*           | *12:01* |         |      |
    |------------------------+---------+---------+------|
-   | *PyKuang [0/0]*        | *10:34* |         |      |
-   | \_  /Components [0/0]/ |         | /10:34/ |      |
+   | *PyKuang [0/0]*        | *12:01* |         |      |
+   | \_  /Components [0/0]/ |         | /12:01/ |      |
    | \_    Model [0/0]      |         |         | 0:25 |
    | \_    Database [0/0]   |         |         | 2:01 |
    | \_    Cache [0/0]      |         |         | 1:45 |
-   | \_    Generator [0/0]  |         |         | 2:24 |
+   | \_    Generator [0/0]  |         |         | 3:51 |
    | \_    Blacklist [0/0]  |         |         | 3:59 |
    #+END:
 ** Features [0/0]
@@ -71,9 +71,14 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-12-11 Do 14:30]--[2025-12-11 Do 15:57] =>  1:27
     CLOCK: [2025-12-10 Mi 14:28]--[2025-12-10 Mi 16:19] =>  1:51
     CLOCK: [2025-12-09 Di 16:31]--[2025-12-09 Di 17:04] =>  0:33
     :END:
+    So now that the HostGenerator is capable of generating single Hosts, I
+    want to look into parallelizing that. Which should not be hard or
+    surprising. But I would like to have control over the number of generator
+    threads, as I did in my last attempt in Go.
 *** Blacklist [0/0]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
