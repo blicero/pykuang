@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-10 16:02:28 krylon>
+# Time-stamp: <2025-12-11 15:54:38 krylon>
 #
 # /data/code/python/pykuang/test_generator.py
 # created on 10. 12. 2025
@@ -30,6 +30,8 @@ from pykuang.model import Host
 test_dir: Final[str] = os.path.join(
     "/tmp",
     datetime.now().strftime(f"{common.AppName.lower()}_test_database_%Y%m%d_%H%M%S"))
+
+host_cnt: Final[int] = 5
 
 
 class TestHostGenerator(unittest.TestCase):
@@ -70,7 +72,7 @@ class TestHostGenerator(unittest.TestCase):
 
         hosts: list[Host] = []
 
-        for _ in range(10):
+        for _ in range(host_cnt):
             h: Host = g.generate_host()
             self.assertIsNotNone(h)
             self.assertIsInstance(h, Host)

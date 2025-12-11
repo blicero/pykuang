@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-10 16:11:26 krylon>
+# Time-stamp: <2025-12-11 15:56:19 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -17,19 +17,23 @@ pykuang.generator
 """
 
 import logging
+import time
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from ipaddress import IPv4Address, IPv6Address, ip_address
+from queue import Empty, Queue, ShutDown
 from random import randint
-from threading import RLock
-from typing import Optional, Union
+from threading import RLock, Thread
+from typing import Any, Final, Optional, Union
 
 from dns.rcode import Rcode
-from dns.resolver import (NXDOMAIN, Answer, LifetimeTimeout, NoNameservers,
-                          Resolver)
+from dns.resolver import (NXDOMAIN, Answer, LifetimeTimeout, NoAnswer,
+                          NoNameservers, Resolver)
 
 from pykuang import common
 from pykuang.blacklist import IPBlacklist, NameBlacklist
 from pykuang.cache import Cache, CacheDB, CacheType
+from pykuang.database import Database
 from pykuang.model import Host
 
 
@@ -52,6 +56,8 @@ class HostGenerator:
         self.res = Resolver()
         self.bl_addr = IPBlacklist.default()
         self.bl_name = NameBlacklist.default()
+
+        self.res.timeout = 2.5
 
     def generate_ip(self, v6: bool = False) -> Union[IPv4Address, IPv6Address]:
         """Generate a random IP."""
@@ -100,6 +106,8 @@ class HostGenerator:
                            fail)
         except LifetimeTimeout:
             pass
+        except NoAnswer:
+            pass
         return None
 
     def generate_host(self) -> Host:
@@ -119,6 +127,110 @@ class HostGenerator:
         host: Host = Host(name=name, addr=addr)
         return host
 
+
+q_timeout: Final[int] = 5
+
+
+class Cmd(Enum):
+    """Cmd represents a command to a Generator thread."""
+
+    Stop = auto()
+    Pause = auto()
+
+
+@dataclass(kw_only=True, slots=True)
+class Message:
+    """Message is a message to be sent to a Generator thread."""
+
+    Tag: Cmd
+    Payload: Any
+
+
+@dataclass(kw_only=True, slots=True)
+class ParallelGenerator:
+    """Generate Hosts in multiple threads to increase throughput."""
+
+    cnt: int
+    log: logging.Logger = field(default_factory=lambda: common.get_logger("pgen"))
+    lock: RLock = field(default_factory=RLock)
+    _active: bool = False
+    cmdQ: Queue[Message] = field(init=False)
+    hostQ: Queue[Host] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.cmdQ = Queue(self.cnt)
+        self.hostQ = Queue(0)
+
+    @property
+    def active(self) -> bool:
+        """Return the ParallelGenerator's active flag."""
+        with self.lock:
+            return self._active
+
+    def start(self) -> None:
+        """Start the worker threads."""
+        with self.lock:
+            self._active = True
+
+            hw: Thread = Thread(target=self._host_worker, name="host_worker", daemon=False)
+            hw.start()
+
+            for i in range(self.cnt):
+                gw: Thread = Thread(target=self._gen_worker,
+                                    name=f"gen_worker_{i:02d}",
+                                    args=(i+1, ),
+                                    daemon=False)
+                gw.start()
+
+    def _gen_worker(self, wid: int) -> None:
+        """Generate Hosts. Lots of Hosts."""
+        self.log.info("gen_worker #%02d reporting for work.", wid)
+        gen: HostGenerator = HostGenerator()
+
+        try:
+            while self.active:
+                try:
+                    message: Message = self.cmdQ.get(False)
+                except Empty:
+                    pass
+                else:
+                    match message.Tag:
+                        case Cmd.Stop:
+                            self.log.info("gen_worker #%02d will quit now.", wid)
+                            return
+                        case Cmd.Pause:
+                            self.log.info("gen_worker #%02d will pause for %d seconds.",
+                                          wid,
+                                          message.Payload)
+                            time.sleep(message.Payload)
+
+                try:
+                    host: Host = gen.generate_host()
+                    self.hostQ.put(host)
+                except ShutDown:
+                    self.log.info("gen_worker #%02d: HostQueue was shut down. I'm quitting.", wid)
+                    return
+        finally:
+            self.log.info("gen_worker #%02d is finished. So long!", wid)
+            with self.lock:
+                self.cnt -= 1
+
+    def _host_worker(self) -> None:
+        """Catch Hosts from the queue and add them to the database."""
+        self.log.info("host_worker coming right up.")
+        try:
+            db: Database = Database()
+            while self.active:
+                try:
+                    host: Host = self.hostQ.get(True, q_timeout)
+                    with db:
+                        db.host_add(host)
+                except Empty:
+                    pass
+        finally:
+            db.close()
+            self.log.info("Host worker is quitting now.")
+            self.hostQ.shutdown(True)
 
 # Local Variables: #
 # python-indent: 4 #
