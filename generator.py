@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-11 15:56:19 krylon>
+# Time-stamp: <2025-12-12 15:51:09 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -147,7 +147,7 @@ class Message:
     """Message is a message to be sent to a Generator thread."""
 
     Tag: Cmd
-    Payload: Any
+    Payload: Any = None
 
 
 @dataclass(kw_only=True, slots=True)
@@ -160,6 +160,7 @@ class ParallelGenerator:
     _active: bool = False
     cmdQ: Queue[Message] = field(init=False)
     hostQ: Queue[Host] = field(init=False)
+    _id_cnt: int = 0
 
     def __post_init__(self) -> None:
         self.cmdQ = Queue(self.cnt)
@@ -179,12 +180,55 @@ class ParallelGenerator:
             hw: Thread = Thread(target=self._host_worker, name="host_worker", daemon=False)
             hw.start()
 
-            for i in range(self.cnt):
+            for _ in range(self.cnt):
+                self._id_cnt += 1
+                wid: int = self._id_cnt
                 gw: Thread = Thread(target=self._gen_worker,
-                                    name=f"gen_worker_{i:02d}",
-                                    args=(i+1, ),
+                                    name=f"gen_worker_{wid:02d}",
+                                    args=(wid, ),
                                     daemon=False)
                 gw.start()
+
+    def stop(self) -> None:
+        """If active, stop all running worker threads."""
+        if not self.active:
+            return
+
+        with self.lock:
+            self._active = False
+            cnt: Final[int] = self.cnt
+
+        for _ in range(cnt):
+            message = Message(Tag=Cmd.Stop)
+            self.cmdQ.put(message)
+
+    def start_one(self) -> None:
+        """If active, start one more worker thread."""
+        if not self.active:
+            self.log.error("ParallelGenerator is not active.")
+            return
+
+        with self.lock:
+            self._id_cnt += 1
+            wid: int = self._id_cnt
+            gw: Thread = Thread(target=self._gen_worker,
+                                name=f"gen_worker_{wid:02d}",
+                                args=(wid, ),
+                                daemon=False)
+            gw.start()
+            self.cnt += 1
+
+    def stop_one(self) -> None:
+        """If active, stop one worker Thread."""
+        if not self.active:
+            self.log.error("ParallelGenerator is not active.")
+            return
+
+        with self.lock:
+            msg: Message = Message(Tag=Cmd.Stop)
+            self.cmdQ.put(msg)
+            if self.cnt == 1:
+                self._active = False
 
     def _gen_worker(self, wid: int) -> None:
         """Generate Hosts. Lots of Hosts."""
