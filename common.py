@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-05 16:07:20 krylon>
+# Time-stamp: <2025-12-12 16:03:48 krylon>
 #
 # /data/code/python/headlines/src/headlines/common.py
 # created on 30. 09. 2025
@@ -29,6 +29,8 @@ AppName: Final[str] = "PyKuang"
 AppVersion: Final[str] = "0.0.1"
 Debug: Final[bool] = True
 TimeFmt: Final[str] = "%Y-%m-%d %H:%M:%S"
+
+log_level_tty: int = logging.WARNING
 
 
 def parse_iso_date(s: str, end: bool = False) -> Optional[datetime]:
@@ -143,7 +145,7 @@ def get_logger(name: str, terminal: bool = True) -> logging.Logger:
         if terminal:
             log_console_handler = logging.StreamHandler(sys.stdout)
             log_console_handler.setFormatter(log_fmt)
-            log_console_handler.setLevel(logging.DEBUG)
+            log_console_handler.setLevel(log_level_tty)
             log_obj.addHandler(log_console_handler)
 
         _cache[name] = log_obj
