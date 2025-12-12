@@ -26,6 +26,7 @@ from random import randint
 from threading import RLock, Thread
 from typing import Any, Final, Optional, Union
 
+from dns.exception import Timeout
 from dns.rcode import Rcode
 from dns.resolver import (NXDOMAIN, Answer, LifetimeTimeout, NoAnswer,
                           NoNameservers, Resolver)
@@ -58,6 +59,7 @@ class HostGenerator:
         self.bl_name = NameBlacklist.default()
 
         self.res.timeout = 2.5
+        self.res.lifetime = 2.5
 
     def generate_ip(self, v6: bool = False) -> Union[IPv4Address, IPv6Address]:
         """Generate a random IP."""
@@ -107,6 +109,8 @@ class HostGenerator:
         except LifetimeTimeout:
             pass
         except NoAnswer:
+            pass
+        except Timeout:
             pass
         return None
 
