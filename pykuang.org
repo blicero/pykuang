@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-13 15:22:26 krylon>
+# Time-stamp: <2025-12-13 17:17:50 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -15,13 +15,13 @@
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-13 Sa 15:22]
+   #+CAPTION: Clock summary at [2025-12-13 Sa 17:17]
    | Headline                               | Time    |         |      |      |
    |----------------------------------------+---------+---------+------+------|
-   | *Total time*                           | *17:54* |         |      |      |
+   | *Total time*                           | *19:43* |         |      |      |
    |----------------------------------------+---------+---------+------+------|
-   | *PyKuang [2/2]*                        | *17:54* |         |      |      |
-   | \_  /Components [2/2]/                 |         | /17:54/ |      |      |
+   | *PyKuang [2/2]*                        | *19:43* |         |      |      |
+   | \_  /Components [2/2]/                 |         | /19:43/ |      |      |
    | \_    Common [1/1]                     |         |         | 0:08 |      |
    | \_      Make TTY logging configurable  |         |         |      | 0:08 |
    | \_    Model [0/0]                      |         |         | 0:25 |      |
@@ -30,7 +30,7 @@
    | \_    Cache [0/0]                      |         |         | 1:45 |      |
    | \_    Generator [0/0]                  |         |         | 4:14 |      |
    | \_    Blacklist [0/0]                  |         |         | 3:59 |      |
-   | \_    XFR [0/0]                        |         |         | 0:21 |      |
+   | \_    XFR [0/0]                        |         |         | 2:10 |      |
    | \_    Nexus [0/0]                      |         |         | 1:20 |      |
    #+END:
 ** Features [0/0]
@@ -123,6 +123,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-12-13 Sa 15:28]--[2025-12-13 Sa 17:17] =>  1:49
     CLOCK: [2025-12-12 Fr 16:45]--[2025-12-12 Fr 17:06] =>  0:21
     :END:
 *** Web Interface [0/0]
