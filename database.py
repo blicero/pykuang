@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-08 16:28:07 krylon>
+# Time-stamp: <2025-12-13 15:16:32 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -28,7 +28,7 @@ import krylib
 
 from pykuang import common
 from pykuang.common import KuangError
-from pykuang.model import Host
+from pykuang.model import XFR, Host
 
 
 class DBError(KuangError):
@@ -75,15 +75,18 @@ BEGIN
 END
     """,
     """
-CREATE TABLE zone (
+CREATE TABLE xfr (
     id INTEGER PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
-    started INTEGER NOT NULL,
-    finished INTEGER,
-    status INTEGER NOT NULL DEFAULT 0
+    added INTEGER NOT NULL,
+    started INTEGER NOT NULL DEFAULT 0,
+    finished INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 0,
+    CHECK (finished >= started)
 ) STRICT
     """,
-    "CREATE INDEX zone_finish_idx ON zone (finished)",
+    "CREATE INDEX xfr_finish_idx ON xfr (finished)",
+    "CREATE INDEX xfr_name_idx ON xfr (name)",
 ]
 
 
@@ -101,6 +104,13 @@ class Query(Enum):
     SvcAdd = auto()
     SvcGetByPort = auto()
     SvcGetByHost = auto()
+
+    XfrAdd = auto()
+    XfrStart = auto()
+    XfrEnd = auto()
+    XfrGetUnfinished = auto()
+    XfrGetByID = auto()
+    XfrGetByName = auto()
 
 
 qdb: Final[dict[Query, str]] = {
@@ -139,6 +149,30 @@ SELECT
 FROM host
 """,
     Query.HostUpdateLastContact: "UPDATE host SET last_contact = ? WHERE id = ?",
+    Query.XfrAdd: "INSERT INTO xfr (name, added) VALUES (?, ?) RETURNING id",
+    Query.XfrStart: "UPDATE xfr SET started = ? WHERE id = ?",
+    Query.XfrEnd: "UPDATE xfr SET finished = ?, status = ? WHERE id = ?",
+    Query.XfrGetUnfinished: """
+SELECT
+    id,
+    name,
+    added,
+    started,
+    status
+FROM xfr
+WHERE finished = 0
+LIMIT ?
+    """,
+    Query.XfrGetByName: """
+SELECT
+    id,
+    added,
+    started,
+    finished,
+    status
+FROM xfr
+WHERE name = ?
+    """,
 }
 
 
@@ -307,6 +341,72 @@ class Database:
         cur = self.db.cursor()
         cur.execute(qdb[Query.HostUpdateLastContact], (tstamp, host.host_id))
         host.last_contact = tstamp
+
+    def xfr_add(self, xfr: XFR) -> None:
+        """Add a DNS zone to the database to be XFR'ed."""
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(qdb[Query.XfrAdd], (xfr.name, int(xfr.added.timestamp())))
+        row = cur.fetchone()
+        if row is None:
+            msg = \
+                f"Error adding XFR zone {xfr.name}: No exception, but no ID was returned, either."""
+            self.log.error(msg)
+            raise DBError(msg)
+        xfr.zone_id = row[0]
+
+    def xfr_start(self, xfr: XFR) -> None:
+        """Mark an XFR as started."""
+        now = datetime.now()
+        cur: sqlite3.Cursor = self.db.cursor()
+        cur.execute(qdb[Query.XfrStart], (int(now.timestamp()), xfr.zone_id))
+        xfr.started = now
+
+    def xfr_finish(self, xfr: XFR, status: bool) -> None:
+        """Mark an XFR as finished."""
+        now = datetime.now()
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.XfrEnd], (int(now.timestamp()), status, xfr.zone_id))
+        xfr.finished = now
+        xfr.status = status
+
+    def xfr_get_unfinished(self, limit: int = -1) -> list[XFR]:
+        """Get up to <limit> unfinished XFRs from the database.
+
+        If <limit> is < 0, return all unfinished XFRs.
+        """
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.XfrGetUnfinished], (limit, ))
+        xfrs: list[XFR] = []
+
+        for row in cur:
+            x: XFR = XFR(
+                zone_id=row[0],
+                name=row[1],
+                added=datetime.fromtimestamp(row[2]),
+                started=datetime.fromtimestamp(row[3]),
+                status=row[4],
+            )
+            xfrs.append(x)
+
+        return xfrs
+
+    def xfr_get_by_name(self, name: str) -> Optional[XFR]:
+        """Look up an XFR by the zone name."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.XfrGetByName], (name, ))
+        row = cur.fetchone()
+        if row is None:
+            return None
+
+        x: XFR = XFR(
+            zone_id=row[0],
+            name=name,
+            added=datetime.fromtimestamp(row[1]),
+            started=datetime.fromtimestamp(row[2]),
+            finished=datetime.fromtimestamp(row[3]),
+            status=bool(row[4]),
+        )
+        return x
 
 
 def maybe_timestamp(ts: Optional[int]) -> Optional[datetime]:

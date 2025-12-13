@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-08 16:23:16 krylon>
+# Time-stamp: <2025-12-13 15:08:44 krylon>
 #
 # /data/code/python/pykuang/test_database.py
 # created on 08. 12. 2025
@@ -25,7 +25,7 @@ from typing import Final, Optional
 
 from pykuang import common
 from pykuang.database import Database
-from pykuang.model import Host
+from pykuang.model import XFR, Host
 
 test_dir: Final[str] = os.path.join(
     "/tmp",
@@ -97,6 +97,16 @@ class TestDatabase(unittest.TestCase):
         for host in hosts:
             self.assertIsInstance(host, Host)
 
+    def test_04_xfr_add(self) -> None:
+        """Attempt adding a few XFRs."""
+        zone_cnt: Final[int] = 10
+        zones: list[XFR] = [XFR(name=f"zone{i+1:02d}.example.com") for i in range(zone_cnt)]
+        db: Final[Database] = self.db()
+
+        with db:
+            for x in zones:
+                db.xfr_add(x)
+                self.assertGreater(x.zone_id, 0)
 
 # Local Variables: #
 # python-indent: 4 #
