@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-10 15:36:30 krylon>
+# Time-stamp: <2025-12-13 15:10:04 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -47,14 +47,16 @@ class Service:
 
 
 @dataclass(slots=True, kw_only=True)
-class Zone:
-    """Zone is a DNS zone."""
+class XFR:
+    """XFR is the zone transfer of a DNS zone."""
 
     zone_id: int = -1
     name: str
-    nameservers: list[str]
-    xfr_stamp: datetime
-    success: bool
+    nameservers: list[str] = field(default_factory=list)
+    added: datetime = field(default_factory=datetime.now)
+    started: Optional[datetime] = None
+    finished: Optional[datetime] = None
+    status: bool = False
 
 
 # Local Variables: #
