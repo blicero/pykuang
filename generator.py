@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-12 15:51:09 krylon>
+# Time-stamp: <2025-12-13 15:39:25 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -19,12 +19,11 @@ pykuang.generator
 import logging
 import time
 from dataclasses import dataclass, field
-from enum import Enum, auto
 from ipaddress import IPv4Address, IPv6Address, ip_address
 from queue import Empty, Queue, ShutDown
 from random import randint
 from threading import RLock, Thread
-from typing import Any, Final, Optional, Union
+from typing import Final, Optional, Union
 
 from dns.exception import Timeout
 from dns.rcode import Rcode
@@ -34,6 +33,7 @@ from dns.resolver import (NXDOMAIN, Answer, LifetimeTimeout, NoAnswer,
 from pykuang import common
 from pykuang.blacklist import IPBlacklist, NameBlacklist
 from pykuang.cache import Cache, CacheDB, CacheType
+from pykuang.control import Cmd, Message
 from pykuang.database import Database
 from pykuang.model import Host
 
@@ -133,21 +133,6 @@ class HostGenerator:
 
 
 q_timeout: Final[int] = 5
-
-
-class Cmd(Enum):
-    """Cmd represents a command to a Generator thread."""
-
-    Stop = auto()
-    Pause = auto()
-
-
-@dataclass(kw_only=True, slots=True)
-class Message:
-    """Message is a message to be sent to a Generator thread."""
-
-    Tag: Cmd
-    Payload: Any = None
 
 
 @dataclass(kw_only=True, slots=True)
