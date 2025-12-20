@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-13 15:10:04 krylon>
+# Time-stamp: <2025-12-19 16:13:47 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -18,8 +18,19 @@ pykuang.model
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
 from typing import Optional, Union
+
+
+class HostSource(IntEnum):
+    """HostSource describes how we got knowledge of a Host."""
+
+    User = auto()
+    Generator = auto()
+    XFR = auto()
+    MX = auto()
+    NS = auto()
 
 
 @dataclass(slots=True, kw_only=True)
@@ -29,6 +40,7 @@ class Host:
     host_id: int = -1
     name: str
     addr: Union[IPv4Address, IPv6Address]
+    src: HostSource = HostSource.User
     added: datetime = field(default_factory=datetime.now)
     last_contact: Optional[datetime] = None
     sysname: str = ""

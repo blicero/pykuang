@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-13 15:16:32 krylon>
+# Time-stamp: <2025-12-19 16:19:59 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -28,7 +28,7 @@ import krylib
 
 from pykuang import common
 from pykuang.common import KuangError
-from pykuang.model import XFR, Host
+from pykuang.model import XFR, Host, HostSource
 
 
 class DBError(KuangError):
@@ -41,6 +41,7 @@ CREATE TABLE host (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     addr TEXT UNIQUE NOT NULL,
+    src INTEGER NOT NULL,
     added INTEGER NOT NULL,
     last_contact INTEGER,
     sysname TEXT NOT NULL DEFAULT '',
@@ -114,11 +115,12 @@ class Query(Enum):
 
 
 qdb: Final[dict[Query, str]] = {
-    Query.HostAdd: "INSERT INTO host (name, addr, added) VALUES (?, ?, ?) RETURNING id",
+    Query.HostAdd: "INSERT INTO host (name, addr, src, added) VALUES (?, ?, ?, ?) RETURNING id",
     Query.HostGetByAddr: """
 SELECT
     id,
     name,
+    src,
     added,
     last_contact,
     sysname,
@@ -129,6 +131,7 @@ WHERE addr = ?
     Query.HostGetByID: """
 SELECT
     addr,
+    src,
     name,
     added,
     last_contact,
@@ -141,6 +144,7 @@ WHERE id = ?
 SELECT
     id,
     addr,
+    src,
     name,
     added,
     last_contact,
@@ -247,6 +251,7 @@ class Database:
         cur: Final[sqlite3.Cursor] = self.db.cursor()
         cur.execute(qdb[Query.HostAdd], (host.name,
                                          str(host.addr),
+                                         host.src,
                                          int(now.timestamp())))
         row = cur.fetchone()
         if row is None:
@@ -272,10 +277,11 @@ class Database:
         host: Host = Host(host_id=row[0],
                           name=row[1],
                           addr=addr,
-                          added=datetime.fromtimestamp(row[2]),
-                          last_contact=maybe_timestamp(row[3]),
-                          sysname=row[4],
-                          location=row[5],
+                          src=HostSource(row[2]),
+                          added=datetime.fromtimestamp(row[3]),
+                          last_contact=maybe_timestamp(row[4]),
+                          sysname=row[5],
+                          location=row[6],
                           )
 
         return host
@@ -292,11 +298,12 @@ class Database:
         host: Host = Host(
             host_id=host_id,
             addr=ip_address(row[0]),
-            name=row[1],
-            added=datetime.fromtimestamp(row[2]),
-            last_contact=maybe_timestamp(row[3]),
-            sysname=row[4],
-            location=row[5],
+            src=HostSource(row[1]),
+            name=row[2],
+            added=datetime.fromtimestamp(row[3]),
+            last_contact=maybe_timestamp(row[4]),
+            sysname=row[5],
+            location=row[6],
         )
 
         return host
@@ -315,11 +322,12 @@ class Database:
             host: Host = Host(
                 host_id=row[0],
                 addr=ip_address(row[1]),
-                name=row[2],
-                added=datetime.fromtimestamp(row[3]),
-                last_contact=maybe_timestamp(row[4]),
-                sysname=row[5],
-                location=row[6],
+                src=HostSource(row[2]),
+                name=row[3],
+                added=datetime.fromtimestamp(row[4]),
+                last_contact=maybe_timestamp(row[5]),
+                sysname=row[6],
+                location=row[7],
             )
 
             hosts.append(host)
