@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-12 16:03:48 krylon>
+# Time-stamp: <2025-12-20 16:12:09 krylon>
 #
 # /data/code/python/headlines/src/headlines/common.py
 # created on 30. 09. 2025
@@ -30,7 +30,7 @@ AppVersion: Final[str] = "0.0.1"
 Debug: Final[bool] = True
 TimeFmt: Final[str] = "%Y-%m-%d %H:%M:%S"
 
-log_level_tty: int = logging.WARNING
+log_level_tty: int = logging.DEBUG
 
 
 def parse_iso_date(s: str, end: bool = False) -> Optional[datetime]:
@@ -126,7 +126,7 @@ def get_logger(name: str, terminal: bool = True) -> logging.Logger:
         if name in _cache:
             return _cache[name]
 
-        log_format = "%(asctime)s (%(name)-16s / line %(lineno)-4d) " + \
+        log_format = "%(asctime)s (%(name)-10s:%(lineno)-4d) " + \
             "- %(levelname)-8s %(message)s"
         max_log_size = 4 * 2**20  # 4 MiB
         max_log_count = 10
