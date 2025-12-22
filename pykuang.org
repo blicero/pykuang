@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-21 22:29:49 krylon>
+# Time-stamp: <2025-12-22 22:35:00 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -15,13 +15,13 @@
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-21 So 22:29]
+   #+CAPTION: Clock summary at [2025-12-22 Mo 22:34]
    | Headline                               | Time       |            |       |      |
    |----------------------------------------+------------+------------+-------+------|
-   | *Total time*                           | *1d 10:48* |            |       |      |
+   | *Total time*                           | *1d 16:29* |            |       |      |
    |----------------------------------------+------------+------------+-------+------|
-   | *PyKuang [2/2]*                        | *1d 10:48* |            |       |      |
-   | \_  /Components [2/2]/                 |            | /1d 10:48/ |       |      |
+   | *PyKuang [2/2]*                        | *1d 16:29* |            |       |      |
+   | \_  /Components [2/2]/                 |            | /1d 16:29/ |       |      |
    | \_    Common [1/1]                     |            |            |  0:08 |      |
    | \_      Make TTY logging configurable  |            |            |       | 0:08 |
    | \_    Model [0/0]                      |            |            |  0:25 |      |
@@ -30,7 +30,7 @@
    | \_    Cache [0/0]                      |            |            |  1:45 |      |
    | \_    Generator [0/0]                  |            |            |  4:14 |      |
    | \_    Blacklist [0/0]                  |            |            |  3:59 |      |
-   | \_    XFR [0/0]                        |            |            | 17:15 |      |
+   | \_    XFR [0/0]                        |            |            | 22:56 |      |
    | \_    Nexus [0/0]                      |            |            |  1:20 |      |
    #+END:
 ** Features [0/0]
@@ -123,6 +123,9 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-12-22 Mo 18:20]--[2025-12-22 Mo 22:34] =>  4:14
+    CLOCK: [2025-12-22 Mo 17:56]--[2025-12-22 Mo 18:03] =>  0:07
+    CLOCK: [2025-12-22 Mo 16:04]--[2025-12-22 Mo 17:24] =>  1:20
     CLOCK: [2025-12-21 So 18:38]--[2025-12-21 So 22:29] =>  3:51
     CLOCK: [2025-12-20 Sa 14:02]--[2025-12-20 Sa 19:58] =>  5:56
     CLOCK: [2025-12-19 Fr 15:20]--[2025-12-19 Fr 20:38] =>  5:18
