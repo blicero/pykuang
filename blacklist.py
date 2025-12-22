@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-10 15:54:42 krylon>
+# Time-stamp: <2025-12-22 18:02:16 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 12. 2025
@@ -17,12 +17,15 @@ pykuang.blacklist
 """
 
 
+import logging
 import re
 from dataclasses import dataclass, field
 from ipaddress import (IPv4Address, IPv4Network, IPv6Address, IPv6Network,
-                       ip_network)
+                       ip_address, ip_network)
 from threading import Lock
 from typing import Final, Sequence, Union
+
+from pykuang import common
 
 forbidden_networks: Final[list[str]] = [
     "0.0.0.0/8",
@@ -57,9 +60,8 @@ forbidden_names: Final[list[str]] = [
     "\\bunn?ass?igned\\b",
     "^(?:client|host)(?:-?\\d+)?",
     "^(?:un|not-)(?:known|ass?igned|alloc(?:ated)?|registered|provisioned|used|defined|delegated)",
-    "^[^.]+.$",
-    "^\\.$",
-    "^\\*",
+    "^[.]$",
+    "^[*]",
     "^\\w*eth(?:ernet)[^.]*\\.",
     "^\\w\\d+\\[\\-.]",
     "^customer-",
@@ -125,6 +127,8 @@ class NameBlacklist:
 
     patterns: list[NameBlacklistItem] = field(default_factory=list)
     lock: Lock = field(default_factory=Lock)
+    log: logging.Logger = field(default_factory=lambda: common.get_logger("bl_name"))
+    dbg: bool = True
 
     @classmethod
     def from_list(cls, names: Sequence[Union[str, re.Pattern]]) -> 'NameBlacklist':
@@ -152,6 +156,10 @@ class NameBlacklist:
         with self.lock:
             for pat in self.patterns:
                 if pat.is_match(name):
+                    if self.dbg:
+                        self.log.debug("Hostname %s is matched by pattern %s",
+                                       name,
+                                       pat.pat.pattern)
                     self.patterns.sort(key=lambda x: x.hit_cnt, reverse=True)
                     return True
         return False
@@ -178,6 +186,8 @@ class IPBlacklist:
 
     networks: list[IPBlacklistItem]
     lock: Lock = field(default_factory=Lock)
+    log: logging.Logger = field(default_factory=lambda: common.get_logger("bl_addr"))
+    dbg: bool = True
 
     @classmethod
     def from_list(cls, lst: Sequence[Union[IPv4Network, IPv6Network, str]]) -> 'IPBlacklist':
@@ -195,9 +205,16 @@ class IPBlacklist:
         """Return an IPBlacklist of the default networks."""
         return cls.from_list(forbidden_networks)
 
-    def is_match(self, addr: Union[IPv4Address, IPv6Address]) -> bool:
+    def is_match(self, addr: Union[str, IPv4Address, IPv6Address]) -> bool:
         """Return True if <addr> is in any of the blacklisted address ranges."""
         with self.lock:
+            if isinstance(addr, str):
+                try:
+                    addr = ip_address(addr)
+                except ValueError as verr:
+                    self.log.error("'%s' does not look like an IP address: %s.",
+                                   addr,
+                                   verr)
             for net in self.networks:
                 if net.is_match(addr):
                     self.networks.sort(key=lambda x: x.hit_cnt, reverse=True)
