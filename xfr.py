@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-21 22:18:38 krylon>
+# Time-stamp: <2025-12-22 20:51:39 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -22,9 +22,9 @@ import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address, ip_address
-from queue import Queue
+from queue import Empty, Queue
 from sqlite3 import IntegrityError
-from threading import RLock, local
+from threading import Lock, RLock, local
 from typing import Final, Optional, Sequence, Union
 
 import dns
@@ -41,6 +41,8 @@ from pykuang.blacklist import IPBlacklist, NameBlacklist
 from pykuang.control import Message
 from pykuang.database import Database, DBError
 from pykuang.model import XFR, Host, HostSource
+
+q_timeout: Final[Union[float, int]] = 2.5
 
 
 @dataclass(kw_only=True, slots=True)
@@ -127,11 +129,16 @@ class XFRClient:
         try:
             zone = dns.zone.from_xfr(dns.query.xfr(ns, xfr.name))
             now = datetime.now()
+            cnt: int = 0
+            bl_cnt: int = 0
 
             for key, node in zone.nodes.items():
+                cnt += 1
                 name: str = key.to_text()
                 if self.name_blacklist.is_match(name):
+                    bl_cnt += 1
                     continue
+                self.log.debug("Got one item: %s", name)
                 if node.classify() == NodeKind.REGULAR:
                     self._process_node(xfr.name, now, name, node)
 
@@ -144,6 +151,8 @@ class XFRClient:
             self.log.error("XFR of %s failed: %s",
                            xfr.name,
                            cerr)
+        finally:
+            self.log.debug("Received %d records (%d blacklisted).", cnt, bl_cnt)
 
         return status
 
@@ -156,6 +165,9 @@ class XFRClient:
             #                ", ".join([r.to_text() for r in records]))
 
             for r in records:
+                self.log.debug("Got one %s record: %s",
+                               r.rdtype.name,
+                               r)
                 match r.rdtype:
                     # XXX I need to assemble the name from the RDATA and the zone I am slurping,
                     #     so end up with useful hostnames instead of "ns1".
@@ -218,6 +230,44 @@ class XFRClient:
                            dberr,
                            "\n".join(traceback.format_exception(dberr)))
         return status
+
+
+@dataclass(kw_only=True, slots=True)
+class XFRProcessor:
+    """XFRProcessor receives DNS zones and dispatches them to worker threads for AXFR."""
+
+    log: logging.Logger = field(default_factory=lambda: common.get_logger("xfr_proc"))
+    lock: Lock = field(default_factory=Lock)
+    requestQ: Queue[XFR] = field(init=False)
+    _active: bool = False
+    wcnt: int
+
+    def __post_init__(self) -> None:
+        self.requestQ = Queue(0)
+        assert self.wcnt >= 0
+
+    @property
+    def active(self) -> bool:
+        """Return the Processor's active flag."""
+        with self.lock:
+            return self._active
+
+    def start(self) -> None:
+        """Raise the active flag, start the worker threads."""
+        with self.lock:
+            self._active = True
+
+    def _worker(self, wid: int) -> None:
+        """Perform the actual zone transfer."""
+        xc = XFRClient()
+
+        while self.active:
+            try:
+                x: XFR = self.requestQ.get(True, q_timeout)
+                xc.perform_xfr(x)
+            except Empty:
+                pass
+
 
 # Local Variables: #
 # python-indent: 4 #
