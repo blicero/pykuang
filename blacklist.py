@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-22 18:02:16 krylon>
+# Time-stamp: <2025-12-23 15:49:17 krylon>
 #
 # /data/code/python/pykuang/blacklist.py
 # created on 08. 12. 2025
@@ -215,6 +215,7 @@ class IPBlacklist:
                     self.log.error("'%s' does not look like an IP address: %s.",
                                    addr,
                                    verr)
+            assert not isinstance(addr, str)
             for net in self.networks:
                 if net.is_match(addr):
                     self.networks.sort(key=lambda x: x.hit_cnt, reverse=True)
