@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-22 20:51:39 krylon>
+# Time-stamp: <2025-12-23 15:49:39 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -18,13 +18,14 @@ pykuang.xfr
 
 
 import logging
+import time
 import traceback
 from dataclasses import dataclass, field
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address, ip_address
 from queue import Empty, Queue
 from sqlite3 import IntegrityError
-from threading import Lock, RLock, local
+from threading import Lock, RLock, Thread, local
 from typing import Final, Optional, Sequence, Union
 
 import dns
@@ -38,7 +39,7 @@ from dns.resolver import (NXDOMAIN, LifetimeTimeout, NoAnswer, NoNameservers,
 
 from pykuang import common
 from pykuang.blacklist import IPBlacklist, NameBlacklist
-from pykuang.control import Message
+from pykuang.control import Cmd, Message
 from pykuang.database import Database, DBError
 from pykuang.model import XFR, Host, HostSource
 
@@ -239,12 +240,15 @@ class XFRProcessor:
     log: logging.Logger = field(default_factory=lambda: common.get_logger("xfr_proc"))
     lock: Lock = field(default_factory=Lock)
     requestQ: Queue[XFR] = field(init=False)
+    cmdQ: Queue[Message] = field(init=False)
     _active: bool = False
+    _id_cnt: int = 0
     wcnt: int
 
     def __post_init__(self) -> None:
-        self.requestQ = Queue(0)
         assert self.wcnt >= 0
+        self.requestQ = Queue(0)
+        self.cmdQ = Queue(self.wcnt)
 
     @property
     def active(self) -> bool:
@@ -257,16 +261,77 @@ class XFRProcessor:
         with self.lock:
             self._active = True
 
+    def stop(self) -> None:
+        """If active, stop all running worker threads."""
+        if not self.active:
+            return
+
+        with self.lock:
+            self._active = False
+            cnt: Final[int] = self.wcnt
+
+        for _ in range(cnt):
+            msg: Message = Message(Tag=Cmd.Stop)
+            self.cmdQ.put(msg)
+
+    def start_one(self) -> None:
+        """If active, start one more worker thread."""
+        if not self.active:
+            self.log.error("XFRProcessor is not active.")
+            return
+
+        with self.lock:
+            self._id_cnt += 1
+            wid: int = self._id_cnt
+            gw: Thread = Thread(target=self._worker,
+                                name=f"worker_{wid:02d}",
+                                args=(wid, ),
+                                daemon=False)
+            gw.start()
+            self.wcnt += 1
+
+    def stop_one(self) -> None:
+        """If active, stop one worker Thread."""
+        if not self.active:
+            self.log.error("XFRProcessor is not active.")
+            return
+
+        with self.lock:
+            msg: Message = Message(Tag=Cmd.Stop)
+            self.cmdQ.put(msg)
+            if self.wcnt == 1:
+                self._active = False
+
     def _worker(self, wid: int) -> None:
         """Perform the actual zone transfer."""
+        self.log.debug("XFR worker %d reporting for work.", wid)
         xc = XFRClient()
 
-        while self.active:
-            try:
-                x: XFR = self.requestQ.get(True, q_timeout)
-                xc.perform_xfr(x)
-            except Empty:
-                pass
+        try:
+            while self.active:
+                try:
+                    message: Message = self.cmdQ.get(False)
+                except Empty:
+                    pass
+                else:
+                    match message.Tag:
+                        case Cmd.Stop:
+                            self.log.info("gen_worker #%02d will quit now.", wid)
+                            return
+                        case Cmd.Pause:
+                            self.log.info("gen_worker #%02d will pause for %d seconds.",
+                                          wid,
+                                          message.Payload)
+                            time.sleep(message.Payload)
+
+                try:
+                    x: XFR = self.requestQ.get(True, q_timeout)
+                    xc.perform_xfr(x)
+                except Empty:
+                    pass
+        finally:
+            with self.lock:
+                self.wcnt -= 1
 
 
 # Local Variables: #
