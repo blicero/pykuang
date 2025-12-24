@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-11 16:50:05 krylon>
+# Time-stamp: <2025-12-24 15:17:45 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 12. 2025
@@ -37,7 +37,7 @@ class Nexus:
     scnt: int
 
     def __post_init__(self) -> None:
-        self.pgen = ParallelGenerator(cnt=self.gcnt)
+        self.pgen = ParallelGenerator(wcnt=self.gcnt)
 
     @property
     def active(self) -> bool:

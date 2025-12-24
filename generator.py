@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-13 15:39:25 krylon>
+# Time-stamp: <2025-12-24 15:17:42 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -139,7 +139,7 @@ q_timeout: Final[int] = 5
 class ParallelGenerator:
     """Generate Hosts in multiple threads to increase throughput."""
 
-    cnt: int
+    wcnt: int
     log: logging.Logger = field(default_factory=lambda: common.get_logger("pgen"))
     lock: RLock = field(default_factory=RLock)
     _active: bool = False
@@ -148,7 +148,8 @@ class ParallelGenerator:
     _id_cnt: int = 0
 
     def __post_init__(self) -> None:
-        self.cmdQ = Queue(self.cnt)
+        assert self.wcnt > 0
+        self.cmdQ = Queue(self.wcnt)
         self.hostQ = Queue(0)
 
     @property
@@ -165,7 +166,7 @@ class ParallelGenerator:
             hw: Thread = Thread(target=self._host_worker, name="host_worker", daemon=False)
             hw.start()
 
-            for _ in range(self.cnt):
+            for _ in range(self.wcnt):
                 self._id_cnt += 1
                 wid: int = self._id_cnt
                 gw: Thread = Thread(target=self._gen_worker,
@@ -181,7 +182,7 @@ class ParallelGenerator:
 
         with self.lock:
             self._active = False
-            cnt: Final[int] = self.cnt
+            cnt: Final[int] = self.wcnt
 
         for _ in range(cnt):
             message = Message(Tag=Cmd.Stop)
@@ -201,7 +202,7 @@ class ParallelGenerator:
                                 args=(wid, ),
                                 daemon=False)
             gw.start()
-            self.cnt += 1
+            self.wcnt += 1
 
     def stop_one(self) -> None:
         """If active, stop one worker Thread."""
@@ -212,7 +213,7 @@ class ParallelGenerator:
         with self.lock:
             msg: Message = Message(Tag=Cmd.Stop)
             self.cmdQ.put(msg)
-            if self.cnt == 1:
+            if self.wcnt == 1:
                 self._active = False
 
     def _gen_worker(self, wid: int) -> None:
@@ -246,7 +247,7 @@ class ParallelGenerator:
         finally:
             self.log.info("gen_worker #%02d is finished. So long!", wid)
             with self.lock:
-                self.cnt -= 1
+                self.wcnt -= 1
 
     def _host_worker(self) -> None:
         """Catch Hosts from the queue and add them to the database."""
