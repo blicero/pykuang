@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-13 15:39:02 krylon>
+# Time-stamp: <2025-12-25 17:57:33 krylon>
 #
 # /data/code/python/pykuang/control.py
 # created on 13. 12. 2025
@@ -20,14 +20,25 @@ This file contains data types for controlling worker threads in the various subs
 
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any
+from typing import Optional, Union
 
 
 class Cmd(Enum):
     """Cmd represents a command to a Generator thread."""
 
+    Start = auto()
     Stop = auto()
     Pause = auto()
+    StartOne = auto()
+    StopOne = auto()
+
+
+class Facility(Enum):
+    """Facility represents a subsystem of the application."""
+
+    Generator = auto()
+    XFR = auto()
+    Scanner = auto()
 
 
 @dataclass(kw_only=True, slots=True)
@@ -35,7 +46,7 @@ class Message:
     """Message is a message to be sent to a Generator thread."""
 
     Tag: Cmd
-    Payload: Any = None
+    Payload: Optional[Union[int, float, str, Facility]] = None
 
 
 # Local Variables: #

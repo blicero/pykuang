@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-23 15:49:39 krylon>
+# Time-stamp: <2025-12-25 21:56:00 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -322,8 +322,10 @@ class XFRProcessor:
                             self.log.info("gen_worker #%02d will pause for %d seconds.",
                                           wid,
                                           message.Payload)
-                            time.sleep(message.Payload)
-
+                            if isinstance(message.Payload, (int, float)):
+                                time.sleep(message.Payload)
+                            else:
+                                self.log.error("Message payload is not a number!")
                 try:
                     x: XFR = self.requestQ.get(True, q_timeout)
                     xc.perform_xfr(x)

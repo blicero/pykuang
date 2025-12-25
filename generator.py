@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-24 15:17:42 krylon>
+# Time-stamp: <2025-12-25 22:15:02 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -236,7 +236,12 @@ class ParallelGenerator:
                             self.log.info("gen_worker #%02d will pause for %d seconds.",
                                           wid,
                                           message.Payload)
-                            time.sleep(message.Payload)
+                            if isinstance(message.Payload, (int, float)):
+                                time.sleep(message.Payload)
+                            else:
+                                self.log.error("Message payload is not a number, but a %s (%s)",
+                                               message.Payload.__class__.__name__,
+                                               message.Payload)
 
                 try:
                     host: Host = gen.generate_host()
