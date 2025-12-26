@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-19 16:19:59 krylon>
+# Time-stamp: <2025-12-26 18:12:36 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -97,6 +97,7 @@ class Query(Enum):
     HostAdd = auto()
     HostGetByAddr = auto()
     HostGetByID = auto()
+    HostGetRandom = auto()
     HostGetAll = auto()
     HostUpdateLastContact = auto()
     HostUpdateSysname = auto()
@@ -139,6 +140,19 @@ SELECT
     location
 FROM host
 WHERE id = ?
+    """,
+    Query.HostGetRandom: """
+SELECT id,
+       addr,
+       name,
+       src,
+       added,
+       last_contact,
+       COALESCE(sysname, ''),
+       COALESCE(location, ''),
+FROM host
+LIMIT ?
+OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
     """,
     Query.HostGetAll: """
 SELECT
@@ -307,6 +321,30 @@ class Database:
         )
 
         return host
+
+    def host_get_random(self, cnt: int) -> list[Host]:
+        """Get up to <cnt> Hosts picked randomly from the database."""
+        assert cnt > 0, "Host count must be positive."
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.HostGetRandom], (cnt, ))
+
+        hosts: list[Host] = []
+
+        for row in cur:
+            host: Host = Host(
+                host_id=row[0],
+                addr=ip_address(row[1]),
+                name=row[3],
+                src=HostSource(row[4]),
+                added=datetime.fromtimestamp(row[5]),
+                last_contact=maybe_timestamp(row[6]),
+                sysname=row[7],
+                location=row[8],
+            )
+
+            hosts.append(host)
+
+        return hosts
 
     def host_get_all(self) -> list[Host]:
         """Get all hosts from the database.
