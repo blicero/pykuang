@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-25 22:26:59 krylon>
+# Time-stamp: <2025-12-26 18:22:03 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -15,24 +15,25 @@
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-25 Do 22:26]
-   | Headline                               | Time       |            |         |      |
-   |----------------------------------------+------------+------------+---------+------|
-   | *Total time*                           | *1d 22:58* |            |         |      |
-   |----------------------------------------+------------+------------+---------+------|
-   | *PyKuang [2/2]*                        | *1d 22:58* |            |         |      |
-   | \_  /Components [2/2]/                 |            | /1d 22:58/ |         |      |
-   | \_    Common [1/1]                     |            |            |    0:08 |      |
-   | \_      Make TTY logging configurable  |            |            |         | 0:08 |
-   | \_    Model [0/0]                      |            |            |    0:25 |      |
-   | \_    Database [1/1]                   |            |            |    5:42 |      |
-   | \_      Add support for zone transfers |            |            |         | 3:41 |
-   | \_    Cache [0/0]                      |            |            |    1:45 |      |
-   | \_    Generator [0/0]                  |            |            |    4:14 |      |
-   | \_    Blacklist [0/0]                  |            |            |    3:59 |      |
-   | \_    XFR [0/0]                        |            |            | 1d 3:22 |      |
-   | \_    Nexus [0/0]                      |            |            |    3:23 |      |
-   | \_      Control [0/0]                  |            |            |         | 1:09 |
+   #+CAPTION: Clock summary at [2025-12-26 Fr 18:22]
+   | Headline                               | Time      |           |         |      |
+   |----------------------------------------+-----------+-----------+---------+------|
+   | *Total time*                           | *2d 0:33* |           |         |      |
+   |----------------------------------------+-----------+-----------+---------+------|
+   | *PyKuang [2/2]*                        | *2d 0:33* |           |         |      |
+   | \_  /Components [2/2]/                 |           | /2d 0:33/ |         |      |
+   | \_    Common [1/1]                     |           |           |    0:08 |      |
+   | \_      Make TTY logging configurable  |           |           |         | 0:08 |
+   | \_    Model [0/0]                      |           |           |    0:25 |      |
+   | \_    Database [1/1]                   |           |           |    5:42 |      |
+   | \_      Add support for zone transfers |           |           |         | 3:41 |
+   | \_    Cache [0/0]                      |           |           |    1:45 |      |
+   | \_    Generator [0/0]                  |           |           |    4:14 |      |
+   | \_    Blacklist [0/0]                  |           |           |    3:59 |      |
+   | \_    Scanner [0/0]                    |           |           |    1:35 |      |
+   | \_    XFR [0/0]                        |           |           | 1d 3:22 |      |
+   | \_    Nexus [0/0]                      |           |           |    3:23 |      |
+   | \_      Control [0/0]                  |           |           |         | 1:09 |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
@@ -117,6 +118,10 @@
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
+    :END:
+    :LOGBOOK:
+    CLOCK: [2025-12-26 Fr 17:43]--[2025-12-26 Fr 18:21] =>  0:38
+    CLOCK: [2025-12-26 Fr 15:13]--[2025-12-26 Fr 16:10] =>  0:57
     :END:
 *** XFR [0/0]
     :PROPERTIES:
