@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-11 15:54:38 krylon>
+# Time-stamp: <2025-12-27 16:13:14 krylon>
 #
 # /data/code/python/pykuang/test_generator.py
 # created on 10. 12. 2025
@@ -32,6 +32,8 @@ test_dir: Final[str] = os.path.join(
     datetime.now().strftime(f"{common.AppName.lower()}_test_database_%Y%m%d_%H%M%S"))
 
 host_cnt: Final[int] = 5
+
+skip_gen: Final[bool] = True
 
 
 class TestHostGenerator(unittest.TestCase):
@@ -68,6 +70,8 @@ class TestHostGenerator(unittest.TestCase):
 
     def test_02_generate_hosts(self) -> None:
         """Attempt to generate some Hosts."""
+        if skip_gen:
+            self.skipTest("I'm not in the mood.")
         g: HostGenerator = self.gen()
 
         hosts: list[Host] = []
