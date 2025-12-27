@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-26 18:12:36 krylon>
+# Time-stamp: <2025-12-27 16:50:41 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -28,7 +28,7 @@ import krylib
 
 from pykuang import common
 from pykuang.common import KuangError
-from pykuang.model import XFR, Host, HostSource
+from pykuang.model import XFR, Host, HostSource, Service
 
 
 class DBError(KuangError):
@@ -45,11 +45,12 @@ CREATE TABLE host (
     added INTEGER NOT NULL,
     last_contact INTEGER,
     sysname TEXT NOT NULL DEFAULT '',
-    location TEXT NOT NULL DEFAULT ''
+    location TEXT NOT NULL DEFAULT '',
+    CHECK (src BETWEEN 1 AND 5)
 ) STRICT
     """,
     "CREATE INDEX host_added_idx ON host (added)",
-    "CREATE INDEX host_last_contact_idx ON host (last_contact)",
+    "CREATE INDEX host_last_contact_idx ON host (COALESCE(last_contact, 0))",
     """
 CREATE TABLE svc (
     id INTEGER PRIMARY KEY,
@@ -60,7 +61,8 @@ CREATE TABLE svc (
     FOREIGN KEY (host_id) REFERENCES host (id)
         ON UPDATE RESTRICT
         ON DELETE CASCADE,
-    UNIQUE (host_id, port)
+    UNIQUE (host_id, port),
+    CHECK (port BETWEEN 1 AND 65535)
 ) STRICT
     """,
     "CREATE INDEX svc_host_idx ON svc (host_id)",
@@ -142,15 +144,17 @@ FROM host
 WHERE id = ?
     """,
     Query.HostGetRandom: """
-SELECT id,
-       addr,
-       name,
-       src,
-       added,
-       last_contact,
-       COALESCE(sysname, ''),
-       COALESCE(location, ''),
+SELECT
+    id,
+    addr,
+    name,
+    src,
+    added,
+    last_contact,
+    COALESCE(sysname, ''),
+    COALESCE(location, '')
 FROM host
+ORDER BY COALESCE(last_contact, 0) DESC
 LIMIT ?
 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
     """,
@@ -167,6 +171,21 @@ SELECT
 FROM host
 """,
     Query.HostUpdateLastContact: "UPDATE host SET last_contact = ? WHERE id = ?",
+    Query.SvcAdd: """
+INSERT INTO svc (host_id, port, added, response)
+         VALUES (      ?,    ?,     ?,        ?)
+RETURNING id
+""",
+    Query.SvcGetByHost: """
+SELECT
+    id,
+    port,
+    added,
+    response
+FROM svc
+WHERE host_id = ?
+ORDER BY port
+    """,
     Query.XfrAdd: "INSERT INTO xfr (name, added) VALUES (?, ?) RETURNING id",
     Query.XfrStart: "UPDATE xfr SET started = ? WHERE id = ?",
     Query.XfrEnd: "UPDATE xfr SET finished = ?, status = ? WHERE id = ?",
@@ -265,7 +284,7 @@ class Database:
         cur: Final[sqlite3.Cursor] = self.db.cursor()
         cur.execute(qdb[Query.HostAdd], (host.name,
                                          str(host.addr),
-                                         host.src,
+                                         host.src.value,
                                          int(now.timestamp())))
         row = cur.fetchone()
         if row is None:
@@ -334,12 +353,12 @@ class Database:
             host: Host = Host(
                 host_id=row[0],
                 addr=ip_address(row[1]),
-                name=row[3],
-                src=HostSource(row[4]),
-                added=datetime.fromtimestamp(row[5]),
-                last_contact=maybe_timestamp(row[6]),
-                sysname=row[7],
-                location=row[8],
+                name=row[2],
+                src=HostSource(row[3]),
+                added=datetime.fromtimestamp(row[4]),
+                last_contact=maybe_timestamp(row[5]),
+                sysname=row[6],
+                location=row[7],
             )
 
             hosts.append(host)
@@ -387,6 +406,39 @@ class Database:
         cur = self.db.cursor()
         cur.execute(qdb[Query.HostUpdateLastContact], (tstamp, host.host_id))
         host.last_contact = tstamp
+
+    def service_add(self, svc: Service) -> None:
+        """Add a scanned port to the database."""
+        cur: Final[sqlite3.Cursor] = self.db.cursor()
+        cur.execute(qdb[Query.SvcAdd],
+                    (svc.host_id, svc.port, int(svc.added.timestamp()), svc.response))
+
+        row = cur.fetchone()
+        if row is None:
+            self.log.error("Adding service %d:%d did not return an ID.",
+                           svc.host_id,
+                           svc.port)
+        else:
+            svc.sv_id = row[0]
+
+    def service_get_by_host(self, host: Host) -> list[Service]:
+        """Get all scanned ports for <host>."""
+        cur: Final[sqlite3.Cursor] = self.db.cursor()
+        cur.execute(qdb[Query.SvcGetByHost], (host.host_id, ))
+
+        ports: list[Service] = []
+
+        for row in cur:
+            svc: Service = Service(
+                sv_id=row[0],
+                host_id=host.host_id,
+                port=row[1],
+                added=datetime.fromtimestamp(row[2]),
+                response=row[3],
+            )
+            ports.append(svc)
+
+        return ports
 
     def xfr_add(self, xfr: XFR) -> None:
         """Add a DNS zone to the database to be XFR'ed."""

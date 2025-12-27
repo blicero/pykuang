@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-13 15:08:44 krylon>
+# Time-stamp: <2025-12-27 16:18:42 krylon>
 #
 # /data/code/python/pykuang/test_database.py
 # created on 08. 12. 2025
@@ -25,7 +25,7 @@ from typing import Final, Optional
 
 from pykuang import common
 from pykuang.database import Database
-from pykuang.model import XFR, Host
+from pykuang.model import XFR, Host, HostSource
 
 test_dir: Final[str] = os.path.join(
     "/tmp",
@@ -79,6 +79,7 @@ class TestDatabase(unittest.TestCase):
                     addr=addr,
                     name=name,
                     added=datetime.now(),
+                    src=HostSource.Generator,
                 )
 
                 db.host_add(host)
@@ -97,7 +98,18 @@ class TestDatabase(unittest.TestCase):
         for host in hosts:
             self.assertIsInstance(host, Host)
 
-    def test_04_xfr_add(self) -> None:
+    def test_04_host_get_random(self) -> None:
+        """Try getting random hosts from the database."""
+        db: Final[Database] = self.db()
+        cnt: Final[int] = 5
+
+        hosts: list[Host] = db.host_get_random(cnt)
+
+        self.assertIsNotNone(hosts)
+        self.assertIsInstance(hosts, list)
+        self.assertEqual(len(hosts), cnt)
+
+    def test_05_xfr_add(self) -> None:
         """Attempt adding a few XFRs."""
         zone_cnt: Final[int] = 10
         zones: list[XFR] = [XFR(name=f"zone{i+1:02d}.example.com") for i in range(zone_cnt)]
