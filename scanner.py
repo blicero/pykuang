@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-26 18:21:38 krylon>
+# Time-stamp: <2025-12-27 15:46:19 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -27,7 +27,7 @@ from typing import Final
 from pykuang import common
 from pykuang.control import Message
 from pykuang.database import Database
-from pykuang.model import Host
+from pykuang.model import Host, Service
 
 interesting_ports: Final[list[int]] = [
     21,
@@ -53,6 +53,25 @@ interesting_ports: Final[list[int]] = [
 
 
 @dataclass(kw_only=True, slots=True)
+class ScanRequest:
+    """ScanRequest wraps a Host and a port to scan."""
+
+    host: Host
+    port: int
+
+    def __post_init__(self) -> None:
+        assert 0 < self.port < 65536, "Port must be a number between 1 and 65535"
+
+
+@dataclass(kw_only=True, slots=True)
+class ScanResult:
+    """ScanResult is the result scanning a port."""
+
+    host: Host
+    result: Service
+
+
+@dataclass(kw_only=True, slots=True)
 class Scanner:
     """Scanner scans ports."""
 
@@ -60,14 +79,16 @@ class Scanner:
     lock: RLock = field(default_factory=RLock)
     wcnt: int
     cmdQ: Queue[Message] = field(init=False)
-    hostQ: Queue[Host] = field(init=False)
+    scanQ: Queue[ScanRequest] = field(init=False)
+    resQ: Queue[ScanResult] = field(init=False)
     interval: float = 2.0
     _active: bool = False
 
     def __post_init__(self) -> None:
         assert self.wcnt > 0
         self.cmdQ = Queue(self.wcnt * 2)
-        self.hostQ = Queue(self.wcnt)
+        self.scanQ = Queue(self.wcnt)
+        self.resQ = Queue(self.wcnt * 2)
 
     @property
     def active(self) -> bool:
@@ -76,6 +97,7 @@ class Scanner:
             return self._active
 
     def _feeder(self) -> None:
+        self.log.debug("Feeder thread is coming up...")
         db: Database = Database()
         try:
             while self.active:
@@ -83,17 +105,34 @@ class Scanner:
                     cnt = self.wcnt
                 hosts: list[Host] = db.host_get_random(cnt)
                 for host in hosts:
-                    self.hostQ.put(host)
+                    req = self._select_port(db, host)
+                    self.scanQ.put(req)
                 time.sleep(self.interval)
         finally:
             db.close()
+            self.log.debug("Feeder thread is quitting.")
+
+    def _gatherer(self) -> None:
+        """Gather scanned ports and store them in the database."""
+        self.log.debug("Gatherer threads is starting up.")
+        db: Final[Database] = Database()
+        try:
+            while self.active:
+                pass
+        finally:
+            db.close()
+            self.log.debug("Gatherer thread is quitting.")
 
     def _scan_worker(self, wid: int) -> None:
         self.log.debug("Scan worker %02d starting up.",
                        wid)
-
         while self.active:
             pass
+
+    def _select_port(self, _db: Database, host: Host) -> ScanRequest:
+        """Pick a port to scan for <host>."""
+        #  scanned_ports: list[Service] = db.service_get_by_host(host)
+        return ScanRequest(host=host, port=22)
 
 # Local Variables: #
 # python-indent: 4 #
