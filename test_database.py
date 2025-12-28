@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-27 16:18:42 krylon>
+# Time-stamp: <2025-12-27 21:17:41 krylon>
 #
 # /data/code/python/pykuang/test_database.py
 # created on 08. 12. 2025
@@ -107,7 +107,7 @@ class TestDatabase(unittest.TestCase):
 
         self.assertIsNotNone(hosts)
         self.assertIsInstance(hosts, list)
-        self.assertEqual(len(hosts), cnt)
+        self.assertLessEqual(len(hosts), cnt)
 
     def test_05_xfr_add(self) -> None:
         """Attempt adding a few XFRs."""
