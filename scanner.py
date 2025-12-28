@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-27 15:46:19 krylon>
+# Time-stamp: <2025-12-27 21:12:25 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -18,16 +18,22 @@ pykuang.scanner
 
 
 import logging
+import random
+import socket
 import time
 from dataclasses import dataclass, field
+from datetime import datetime
 from queue import Queue
 from threading import RLock
-from typing import Final
+from typing import Final, Optional
 
 from pykuang import common
 from pykuang.control import Message
 from pykuang.database import Database
-from pykuang.model import Host, Service
+from pykuang.model import Host, HostSource, Service
+
+conn_timeout: Final[float] = 2.5
+rcv_buf: Final[int] = 256
 
 interesting_ports: Final[list[int]] = [
     21,
@@ -86,6 +92,7 @@ class Scanner:
 
     def __post_init__(self) -> None:
         assert self.wcnt > 0
+        socket.setdefaulttimeout(conn_timeout)
         self.cmdQ = Queue(self.wcnt * 2)
         self.scanQ = Queue(self.wcnt)
         self.resQ = Queue(self.wcnt * 2)
@@ -106,7 +113,12 @@ class Scanner:
                 hosts: list[Host] = db.host_get_random(cnt)
                 for host in hosts:
                     req = self._select_port(db, host)
-                    self.scanQ.put(req)
+                    if req is not None:
+                        self.scanQ.put(req)
+                    else:
+                        self.log.debug("No port was found for %s/%s",
+                                       host.name,
+                                       host.addr)
                 time.sleep(self.interval)
         finally:
             db.close()
@@ -129,10 +141,58 @@ class Scanner:
         while self.active:
             pass
 
-    def _select_port(self, _db: Database, host: Host) -> ScanRequest:
+    def _select_port(self, db: Database, host: Host) -> Optional[ScanRequest]:
         """Pick a port to scan for <host>."""
-        #  scanned_ports: list[Service] = db.service_get_by_host(host)
-        return ScanRequest(host=host, port=22)
+        services: list[Service] = db.service_get_by_host(host)
+        ports: Final[frozenset[int]] = frozenset({x.port for x in services})
+
+        match host.src:
+            case HostSource.MX:
+                for p in (25, 110, 143, 587):
+                    if p not in ports:
+                        return ScanRequest(host=host, port=p)
+            case HostSource.NS:
+                if 53 not in ports:
+                    return ScanRequest(host=host, port=53)
+
+        plist: Final[list[int]] = random.sample(interesting_ports, len(interesting_ports))
+
+        for p in plist:
+            if p not in ports:
+                return ScanRequest(host=host, port=p)
+
+        # We've exhausted all our options.
+        # We COULD return a random number from the interval [1,65535], but for now,
+        # we just bail.
+        return None
+
+    def scan_generic(self, req: ScanRequest) -> Optional[ScanResult]:
+        """Open a TCP connection and report what is received."""
+        try:
+            conn = socket.create_connection((req.host.astr, req.port))
+
+            response = conn.recv(rcv_buf)
+            conn.close()
+
+            del conn
+
+            svc: Final[Service] = Service(
+                host_id=req.host.host_id,
+                port=req.port,
+                added=datetime.now(),
+                response=str(response),
+            )
+
+            return ScanResult(host=req.host, result=svc)
+        except ConnectionError as cerr:
+            cname: Final[str] = cerr.__class__.__name__
+            self.log.debug("%s trying to connect to %s:%d - %s",
+                           cname,
+                           req.host.name,
+                           req.port,
+                           cerr)
+
+        return None
 
 # Local Variables: #
 # python-indent: 4 #
