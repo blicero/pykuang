@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-19 16:13:47 krylon>
+# Time-stamp: <2025-12-27 19:23:09 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -45,6 +45,11 @@ class Host:
     last_contact: Optional[datetime] = None
     sysname: str = ""
     location: str = ""
+
+    @property
+    def astr(self) -> str:
+        """Return the Host's IP address as a string."""
+        return str(self.addr)
 
 
 @dataclass(kw_only=True, slots=True)
