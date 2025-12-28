@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-27 16:55:37 krylon>
+# Time-stamp: <2025-12-27 21:10:50 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -15,13 +15,13 @@
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-27 Sa 16:55]
+   #+CAPTION: Clock summary at [2025-12-27 Sa 21:10]
    | Headline                                     | Time      |           |         |      |
    |----------------------------------------------+-----------+-----------+---------+------|
-   | *Total time*                                 | *2d 4:11* |           |         |      |
+   | *Total time*                                 | *2d 8:10* |           |         |      |
    |----------------------------------------------+-----------+-----------+---------+------|
-   | *PyKuang [3/3]*                              | *2d 4:11* |           |         |      |
-   | \_  /Components [3/3]/                       |           | /2d 4:11/ |         |      |
+   | *PyKuang [3/3]*                              | *2d 8:10* |           |         |      |
+   | \_  /Components [3/3]/                       |           | /2d 8:10/ |         |      |
    | \_    Common [1/1]                           |           |           |    0:08 |      |
    | \_      Make TTY logging configurable        |           |           |         | 0:08 |
    | \_    Model [0/0]                            |           |           |    0:25 |      |
@@ -31,7 +31,7 @@
    | \_    Cache [0/0]                            |           |           |    1:45 |      |
    | \_    Generator [0/0]                        |           |           |    4:14 |      |
    | \_    Blacklist [0/0]                        |           |           |    3:59 |      |
-   | \_    Scanner [0/0]                          |           |           |    3:00 |      |
+   | \_    Scanner [0/0]                          |           |           |    6:59 |      |
    | \_    XFR [0/0]                              |           |           | 1d 3:22 |      |
    | \_    Nexus [0/0]                            |           |           |    3:23 |      |
    | \_      Control [0/0]                        |           |           |         | 1:09 |
@@ -127,6 +127,8 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2025-12-27 Sa 18:28]--[2025-12-27 Sa 21:10] =>  2:42
+    CLOCK: [2025-12-27 Sa 17:04]--[2025-12-27 Sa 18:21] =>  1:17
     CLOCK: [2025-12-27 Sa 14:03]--[2025-12-27 Sa 14:30] =>  0:27
     CLOCK: [2025-12-26 Fr 21:50]--[2025-12-26 Fr 22:48] =>  0:58
     CLOCK: [2025-12-26 Fr 17:43]--[2025-12-26 Fr 18:21] =>  0:38
