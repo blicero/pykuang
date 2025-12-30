@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-27 21:10:50 krylon>
+# Time-stamp: <2025-12-30 16:18:39 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,40 +8,41 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [3/3]
+* PyKuang [4/4]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-27 Sa 21:10]
-   | Headline                                     | Time      |           |         |      |
-   |----------------------------------------------+-----------+-----------+---------+------|
-   | *Total time*                                 | *2d 8:10* |           |         |      |
-   |----------------------------------------------+-----------+-----------+---------+------|
-   | *PyKuang [3/3]*                              | *2d 8:10* |           |         |      |
-   | \_  /Components [3/3]/                       |           | /2d 8:10/ |         |      |
-   | \_    Common [1/1]                           |           |           |    0:08 |      |
-   | \_      Make TTY logging configurable        |           |           |         | 0:08 |
-   | \_    Model [0/0]                            |           |           |    0:25 |      |
-   | \_    Database [2/2]                         |           |           |    7:55 |      |
-   | \_      Add support for zone transfers       |           |           |         | 3:41 |
-   | \_      Implement methods to deal with ports |           |           |         | 2:13 |
-   | \_    Cache [0/0]                            |           |           |    1:45 |      |
-   | \_    Generator [0/0]                        |           |           |    4:14 |      |
-   | \_    Blacklist [0/0]                        |           |           |    3:59 |      |
-   | \_    Scanner [0/0]                          |           |           |    6:59 |      |
-   | \_    XFR [0/0]                              |           |           | 1d 3:22 |      |
-   | \_    Nexus [0/0]                            |           |           |    3:23 |      |
-   | \_      Control [0/0]                        |           |           |         | 1:09 |
+   #+CAPTION: Clock summary at [2025-12-30 Di 16:18]
+   | Headline                                     | Time       |            |         |      |
+   |----------------------------------------------+------------+------------+---------+------|
+   | *Total time*                                 | *2d 10:56* |            |         |      |
+   |----------------------------------------------+------------+------------+---------+------|
+   | *PyKuang [4/4]*                              | *2d 10:56* |            |         |      |
+   | \_  /Components [4/4]/                       |            | /2d 10:56/ |         |      |
+   | \_    Common [1/1]                           |            |            |    0:08 |      |
+   | \_      Make TTY logging configurable        |            |            |         | 0:08 |
+   | \_    Model [0/0]                            |            |            |    0:25 |      |
+   | \_    Database [2/2]                         |            |            |    7:55 |      |
+   | \_      Add support for zone transfers       |            |            |         | 3:41 |
+   | \_      Implement methods to deal with ports |            |            |         | 2:13 |
+   | \_    Cache [0/0]                            |            |            |    1:45 |      |
+   | \_    Generator [0/0]                        |            |            |    4:14 |      |
+   | \_    Blacklist [0/0]                        |            |            |    3:59 |      |
+   | \_    Scanner [1/1]                          |            |            |    9:45 |      |
+   | \_      Rethink the interface                |            |            |         | 2:46 |
+   | \_    XFR [0/0]                              |            |            | 1d 3:22 |      |
+   | \_    Nexus [0/0]                            |            |            |    3:23 |      |
+   | \_      Control [0/0]                        |            |            |         | 1:09 |
    #+END:
 ** Features [0/0]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [3/3]
+** Components [4/4]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -121,7 +122,7 @@
     CLOCK: [2025-12-09 Di 14:56]--[2025-12-09 Di 15:37] =>  0:41
     CLOCK: [2025-12-08 Mo 16:53]--[2025-12-08 Mo 20:00] =>  3:07
     :END:
-*** Scanner [0/0]
+*** Scanner [1/1]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -134,6 +135,16 @@
     CLOCK: [2025-12-26 Fr 17:43]--[2025-12-26 Fr 18:21] =>  0:38
     CLOCK: [2025-12-26 Fr 15:13]--[2025-12-26 Fr 16:10] =>  0:57
     :END:
+**** DONE Rethink the interface
+     CLOSED: [2025-12-30 Di 16:17]
+     :LOGBOOK:
+     CLOCK: [2025-12-29 Mo 15:00]--[2025-12-29 Mo 17:36] =>  2:36
+     CLOCK: [2025-12-28 So 16:21]--[2025-12-28 So 16:31] =>  0:10
+     :END:
+     I think I should create the interface in a way that is easier to test, at
+     least for manual testing.
+     Ideally, the actual scanning functions should just take an IP address and
+     a port number.
 *** XFR [0/0]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
