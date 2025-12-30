@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-27 21:12:25 krylon>
+# Time-stamp: <2025-12-29 16:05:47 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -23,9 +23,10 @@ import socket
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
+from ipaddress import IPv4Address, IPv6Address
 from queue import Queue
 from threading import RLock
-from typing import Final, Optional
+from typing import Final, NamedTuple, Optional, Union
 
 from pykuang import common
 from pykuang.control import Message
@@ -56,6 +57,32 @@ interesting_ports: Final[list[int]] = [
     5900,
     8080,
 ]
+
+
+@dataclass(kw_only=True, slots=True)
+class ScanTarget:
+    """ScanTarget is an IP address and a port number to scan."""
+
+    addr: Union[str, IPv4Address, IPv6Address]
+    port: int
+
+    def __post_init__(self) -> None:
+        if not 0 < self.port < 65536:
+            raise ValueError(f"Invalid port {self.port}")
+
+    @property
+    def astr(self) -> str:
+        """Return the address as a string."""
+        if isinstance(self.addr, (IPv4Address, IPv6Address)):
+            return str(self.addr)
+        return self. addr
+
+
+class ScanReply(NamedTuple):
+    """ScanReply is simply a reply from an attempted scan."""
+
+    status: bool
+    response: str
 
 
 @dataclass(kw_only=True, slots=True)
@@ -166,33 +193,41 @@ class Scanner:
         # we just bail.
         return None
 
-    def scan_generic(self, req: ScanRequest) -> Optional[ScanResult]:
-        """Open a TCP connection and report what is received."""
-        try:
-            conn = socket.create_connection((req.host.astr, req.port))
+    def scan_port(self, req: ScanRequest) -> Optional[ScanResult]:
+        """Scan a port."""
+        match req.port:
+            case 21 | 22:
+                reply = self.scan_tcp_generic(req.host.astr, req.port)
+            case _:
+                raise ValueError(f"Don't know how to handle port {req.port}")
 
-            response = conn.recv(rcv_buf)
-            conn.close()
-
-            del conn
-
+        if reply.status:
             svc: Final[Service] = Service(
                 host_id=req.host.host_id,
                 port=req.port,
                 added=datetime.now(),
-                response=str(response),
+                response=reply.response,
             )
-
             return ScanResult(host=req.host, result=svc)
+        return None
+
+    def scan_tcp_generic(self, addr: str, port: int) -> ScanReply:
+        """Open a TCP connection and report what is received."""
+        if not 0 < port < 65536:
+            raise ValueError(f"Invalid port {port}")
+        try:
+            conn = socket.create_connection((addr, port))
+            response = conn.recv(rcv_buf)
+
+            return ScanReply(True, str(response))
         except ConnectionError as cerr:
             cname: Final[str] = cerr.__class__.__name__
-            self.log.debug("%s trying to connect to %s:%d - %s",
-                           cname,
-                           req.host.name,
-                           req.port,
-                           cerr)
+            msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
+            self.log.error(msg)
+            return ScanReply(False, msg)
+        finally:
+            conn.close()
 
-        return None
 
 # Local Variables: #
 # python-indent: 4 #
