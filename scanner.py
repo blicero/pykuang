@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-31 14:16:04 krylon>
+# Time-stamp: <2025-12-31 14:54:34 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -280,6 +280,28 @@ class Scanner:
             msg = f"{cname} trying to connect to {addr}:{port}: {derr}"
             self.log.error(msg)
             return ScanReply(False, msg)
+
+    def scan_finger(self, addr: str, port: int) -> ScanReply:
+        """Attempt to finger a finger server."""
+        if not 0 < port < 65536:
+            raise ValueError(f"Invalid port {port}")
+
+        try:
+            conn = socket.create_connection((addr, port))
+            conn.send(b"root\r\n")
+
+            response = conn.recv(rcv_buf)
+
+            return ScanReply(True, response.decode())
+        except ConnectionError as cerr:
+            cname: Final[str] = cerr.__class__.__name__
+            msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
+            self.log.error(msg)
+            return ScanReply(False, msg)
+
+    # def scan_snmp(self, addr: str, port: int) -> ScanReply:
+    #     """Attempt to scan an SNMP server."""
+    #     mib: Final[str] = ".1.3.6.1.2.1.1.1.0"
 
 # Local Variables: #
 # python-indent: 4 #
