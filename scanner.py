@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-30 17:15:45 krylon>
+# Time-stamp: <2025-12-31 14:16:04 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -30,6 +30,7 @@ from typing import Final, NamedTuple, Optional, Union
 
 import dns
 import requests
+from dns.resolver import Resolver
 
 from pykuang import common
 from pykuang.control import Message
@@ -199,7 +200,7 @@ class Scanner:
     def scan_port(self, req: ScanRequest) -> Optional[ScanResult]:
         """Scan a port."""
         match req.port:
-            case 21 | 22:
+            case 21 | 22 | 25 | 110 | 143:
                 reply = self.scan_tcp_generic(req.host.astr, req.port)
             case 80 | 443 | 8080:
                 reply = self.scan_http(req.host.astr, req.port, req.host.name, req.port == 443)
@@ -233,7 +234,11 @@ class Scanner:
         finally:
             conn.close()
 
-    def scan_http(self, addr: str, port: int, hostname: Optional[str] = None, ssl: bool = False) -> ScanReply:
+    def scan_http(self,
+                  addr: str,
+                  port: int,
+                  hostname: Optional[str] = None,
+                  ssl: bool = False) -> ScanReply:
         """Attempt to scan an HTTP server."""
         if not 0 < port < 65536:
             raise ValueError(f"Invalid port {port}")
@@ -244,15 +249,15 @@ class Scanner:
             else:
                 uri = f"{schema}://{addr}:{port}/"
 
-            response = requests.head(uri)
+            response = requests.head(uri, timeout=conn_timeout)
             return ScanReply(True, response.headers["Server"])
         except ConnectionError as cerr:
-            cname: Final[str] = cerr.__class__.__name__
+            cname: str = cerr.__class__.__name__
             msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
             self.log.error(msg)
             return ScanReply(False, msg)
         except requests.exceptions.RequestException as rerr:
-            cname: Final[str] = rerr.__class__.__name__
+            cname = rerr.__class__.__name__
             msg = f"{cname} trying to connect to {addr}:{port}: {rerr}"
             self.log.error(msg)
             return ScanReply(False, msg)
@@ -262,13 +267,15 @@ class Scanner:
         if not 0 < port < 65536:
             raise ValueError(f"Invalid port {port}")
         try:
-            res = dns.resolver.Resolver("", False)
+            res = Resolver("", False)
             res.nameservers = [addr]
 
             ans = res.resolve("version.bind.", "TXT", "CH")
 
-            return ScanReply(True, ans.rrset[0].to_text())
-        except dns.exceptions.DNSException as derr:
+            if ans.rrset is not None:
+                return ScanReply(True, ans.rrset[0].to_text())
+            return ScanReply(False, "")
+        except dns.exception.DNSException as derr:
             cname: Final[str] = derr.__class__.__name__
             msg = f"{cname} trying to connect to {addr}:{port}: {derr}"
             self.log.error(msg)
