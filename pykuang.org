@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-30 17:16:01 krylon>
+# Time-stamp: <2025-12-31 14:32:11 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,20 +8,20 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [4/4]
+* PyKuang [6/9]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-30 Di 17:15]
+   #+CAPTION: Clock summary at [2025-12-31 Mi 14:32]
    | Headline                                     | Time       |            |         |      |
    |----------------------------------------------+------------+------------+---------+------|
-   | *Total time*                                 | *2d 11:49* |            |         |      |
+   | *Total time*                                 | *2d 15:12* |            |         |      |
    |----------------------------------------------+------------+------------+---------+------|
-   | *PyKuang [4/4]*                              | *2d 11:49* |            |         |      |
-   | \_  /Components [4/4]/                       |            | /2d 11:49/ |         |      |
+   | *PyKuang [6/9]*                              | *2d 15:12* |            |         |      |
+   | \_  /Components [6/9]/                       |            | /2d 15:12/ |         |      |
    | \_    Common [1/1]                           |            |            |    0:08 |      |
    | \_      Make TTY logging configurable        |            |            |         | 0:08 |
    | \_    Model [0/0]                            |            |            |    0:25 |      |
@@ -31,7 +31,8 @@
    | \_    Cache [0/0]                            |            |            |    1:45 |      |
    | \_    Generator [0/0]                        |            |            |    4:14 |      |
    | \_    Blacklist [0/0]                        |            |            |    3:59 |      |
-   | \_    Scanner [1/1]                          |            |            |   10:38 |      |
+   | \_    Scanner [3/6]                          |            |            |   14:01 |      |
+   | \_      Be specific, please [2/4]            |            |            |         | 3:23 |
    | \_      Rethink the interface                |            |            |         | 2:46 |
    | \_    XFR [0/0]                              |            |            | 1d 3:22 |      |
    | \_    Nexus [0/0]                            |            |            |    3:23 |      |
@@ -42,7 +43,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [4/4]
+** Components [6/9]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -122,7 +123,7 @@
     CLOCK: [2025-12-09 Di 14:56]--[2025-12-09 Di 15:37] =>  0:41
     CLOCK: [2025-12-08 Mo 16:53]--[2025-12-08 Mo 20:00] =>  3:07
     :END:
-*** Scanner [1/1]
+*** Scanner [3/6]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -136,6 +137,17 @@
     CLOCK: [2025-12-26 Fr 17:43]--[2025-12-26 Fr 18:21] =>  0:38
     CLOCK: [2025-12-26 Fr 15:13]--[2025-12-26 Fr 16:10] =>  0:57
     :END:
+**** TODO Be specific, please [2/4]
+     :LOGBOOK:
+     CLOCK: [2025-12-31 Mi 13:40]--[2025-12-31 Mi 14:29] =>  0:49
+     CLOCK: [2025-12-30 Di 18:09]--[2025-12-30 Di 20:43] =>  2:34
+     :END:
+***** DONE HTTP(S)
+      CLOSED: [2025-12-31 Mi 14:31]
+***** DONE DNS
+      CLOSED: [2025-12-31 Mi 14:31]
+***** TODO SNMP
+***** TODO Telnet
 **** DONE Rethink the interface
      CLOSED: [2025-12-30 Di 16:17]
      :LOGBOOK:
