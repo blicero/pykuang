@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2025-12-31 14:56:06 krylon>
+# Time-stamp: <2026-01-02 16:19:45 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,20 +8,20 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [7/10]
+* PyKuang [8/10]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2025-12-31 Mi 14:56]
+   #+CAPTION: Clock summary at [2026-01-02 Fr 16:19]
    | Headline                                     | Time       |            |         |      |      |
    |----------------------------------------------+------------+------------+---------+------+------|
    | *Total time*                                 | *2d 15:29* |            |         |      |      |
    |----------------------------------------------+------------+------------+---------+------+------|
-   | *PyKuang [7/10]*                             | *2d 15:29* |            |         |      |      |
-   | \_  /Components [7/10]/                      |            | /2d 15:29/ |         |      |      |
+   | *PyKuang [8/10]*                             | *2d 15:29* |            |         |      |      |
+   | \_  /Components [8/10]/                      |            | /2d 15:29/ |         |      |      |
    | \_    Common [1/1]                           |            |            |    0:08 |      |      |
    | \_      Make TTY logging configurable        |            |            |         | 0:08 |      |
    | \_    Model [0/0]                            |            |            |    0:25 |      |      |
@@ -31,8 +31,8 @@
    | \_    Cache [0/0]                            |            |            |    1:45 |      |      |
    | \_    Generator [0/0]                        |            |            |    4:14 |      |      |
    | \_    Blacklist [0/0]                        |            |            |    3:59 |      |      |
-   | \_    Scanner [4/7]                          |            |            |   14:18 |      |      |
-   | \_      Be specific, please [3/5]            |            |            |         | 3:40 |      |
+   | \_    Scanner [5/7]                          |            |            |   14:18 |      |      |
+   | \_      Be specific, please [4/5]            |            |            |         | 3:40 |      |
    | \_        Finger                             |            |            |         |      | 0:17 |
    | \_      Rethink the interface                |            |            |         | 2:46 |      |
    | \_    XFR [0/0]                              |            |            | 1d 3:22 |      |      |
@@ -44,7 +44,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [7/10]
+** Components [8/10]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -124,7 +124,7 @@
     CLOCK: [2025-12-09 Di 14:56]--[2025-12-09 Di 15:37] =>  0:41
     CLOCK: [2025-12-08 Mo 16:53]--[2025-12-08 Mo 20:00] =>  3:07
     :END:
-*** Scanner [4/7]
+*** Scanner [5/7]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -138,7 +138,7 @@
     CLOCK: [2025-12-26 Fr 17:43]--[2025-12-26 Fr 18:21] =>  0:38
     CLOCK: [2025-12-26 Fr 15:13]--[2025-12-26 Fr 16:10] =>  0:57
     :END:
-**** TODO Be specific, please [3/5]
+**** TODO Be specific, please [4/5]
      :LOGBOOK:
      CLOCK: [2025-12-31 Mi 13:40]--[2025-12-31 Mi 14:29] =>  0:49
      CLOCK: [2025-12-30 Di 18:09]--[2025-12-30 Di 20:43] =>  2:34
@@ -147,7 +147,11 @@
       CLOSED: [2025-12-31 Mi 14:31]
 ***** DONE DNS
       CLOSED: [2025-12-31 Mi 14:31]
-***** TODO SNMP
+***** SUSPENDED SNMP
+      CLOSED: [2026-01-02 Fr 16:19]
+      There is a package called pysnmp, but the example code from the very
+      repo does not work on my development machine. ???
+      It works on FreeBSD, but not on Debian Trixie.
 ***** TODO Telnet
 ***** DONE Finger
       CLOSED: [2025-12-31 Mi 14:55]
