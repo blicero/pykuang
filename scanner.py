@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-31 14:54:34 krylon>
+# Time-stamp: <2026-01-02 17:26:46 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -31,6 +31,7 @@ from typing import Final, NamedTuple, Optional, Union
 import dns
 import requests
 from dns.resolver import Resolver
+from telnetlib3 import Telnet  # type: ignore # pylint: disable-msg=E0401
 
 from pykuang import common
 from pykuang.control import Message
@@ -299,9 +300,26 @@ class Scanner:
             self.log.error(msg)
             return ScanReply(False, msg)
 
-    # def scan_snmp(self, addr: str, port: int) -> ScanReply:
-    #     """Attempt to scan an SNMP server."""
-    #     mib: Final[str] = ".1.3.6.1.2.1.1.1.0"
+    def scan_telnet(self, addr: str, port: int) -> ScanReply:
+        """Attempt to scan a telnet server."""
+        if not 0 < port < 65536:
+            raise ValueError(f"Invalid port {port}")
+
+        try:
+            conn = Telnet(addr, port)
+            data = conn.read_until(b"Sapperlot", conn_timeout)
+            return ScanReply(True, data.decode())
+        except ConnectionError as cerr:
+            cname: Final[str] = cerr.__class__.__name__
+            msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
+            self.log.error(msg)
+            return ScanReply(False, msg)
+        finally:
+            conn.close()
+
+# def scan_snmp(self, addr: str, port: int) -> ScanReply:
+#     """Attempt to scan an SNMP server."""
+#     mib: Final[str] = ".1.3.6.1.2.1.1.1.0"
 
 # Local Variables: #
 # python-indent: 4 #
