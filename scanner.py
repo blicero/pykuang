@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-02 17:26:46 krylon>
+# Time-stamp: <2026-01-03 15:24:08 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -24,8 +24,8 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from ipaddress import IPv4Address, IPv6Address
-from queue import Queue
-from threading import RLock
+from queue import Empty, Queue, ShutDown
+from threading import RLock, Thread
 from typing import Final, NamedTuple, Optional, Union
 
 import dns
@@ -34,8 +34,8 @@ from dns.resolver import Resolver
 from telnetlib3 import Telnet  # type: ignore # pylint: disable-msg=E0401
 
 from pykuang import common
-from pykuang.control import Message
-from pykuang.database import Database
+from pykuang.control import Cmd, Message
+from pykuang.database import Database, DBError
 from pykuang.model import Host, HostSource, Service
 
 conn_timeout: Final[float] = 2.5
@@ -56,11 +56,13 @@ interesting_ports: Final[list[int]] = [
     389,
     443,
     1433,  # MSSQL
+    3270,  # Mainframe?
     3306,  # MySQL
     5432,  # PostgreSQL
     6379,  # Redis
     5900,
     8080,
+    9023,  # possibly alternative port for telnet
 ]
 
 
@@ -116,6 +118,7 @@ class Scanner:
     log: logging.Logger = field(default_factory=lambda: common.get_logger("scanner"))
     lock: RLock = field(default_factory=RLock)
     wcnt: int
+    id_cnt: int = 1
     cmdQ: Queue[Message] = field(init=False)
     scanQ: Queue[ScanRequest] = field(init=False)
     resQ: Queue[ScanResult] = field(init=False)
@@ -130,10 +133,67 @@ class Scanner:
         self.resQ = Queue(self.wcnt * 2)
 
     @property
+    def wid(self) -> int:
+        """Get a new, unique ID for a worker thread."""
+        with self.lock:
+            self.id_cnt += 1
+            return self.id_cnt
+
+    @property
     def active(self) -> bool:
         """Return the Scanner's active flag."""
         with self.lock:
             return self._active
+
+    def start(self) -> None:
+        """Start the worker threads."""
+        self.log.debug("Scanner starting up...")
+        with self.lock:
+            self._active = True
+
+        fthr = Thread(target=self._feeder, daemon=True, name="scanner.feeder")
+        fthr.start()
+
+        gthr = Thread(target=self._gatherer, daemon=True, name="scanner.gatherer")
+        gthr.start()
+
+        for _ in range(self.wcnt):
+            wid = self.wid
+            wthr = Thread(target=self._scan_worker,
+                          args=(wid, ),
+                          daemon=True,
+                          name=f"scanner.scan_worker{wid:02d}")
+            wthr.start()
+
+    def stop(self) -> None:
+        """Tell all the worker threads to quit."""
+        self.log.debug("Telling Scanner to shutdown.")
+        with self.lock:
+            self._active = False
+
+        self.scanQ.shutdown()
+        self.resQ.shutdown()
+        self.cmdQ.shutdown()
+
+    def start_one(self) -> None:
+        """Start another worker thread."""
+        self.log.debug("Start another Scanner thread.")
+        wid = self.wid
+        wthr = Thread(target=self._scan_worker,
+                      args=(wid, ),
+                      daemon=True,
+                      name=f"scanner.scan_worker{wid:02d}")
+        wthr.start()
+
+    def stop_one(self) -> None:
+        """Stop one worker thread."""
+        self.log.debug("Stopping one Scanner thread.")
+        with self.lock:
+            if self.wcnt < 1 or not self.active:
+                self.log.error("Scanner does not appear to be active!")
+                return
+        msg = Message(Tag=Cmd.Stop)
+        self.cmdQ.put(msg)
 
     def _feeder(self) -> None:
         self.log.debug("Feeder thread is coming up...")
@@ -142,6 +202,9 @@ class Scanner:
             while self.active:
                 with self.lock:
                     cnt = self.wcnt
+                if cnt < 1:
+                    time.sleep(self.interval)
+                    continue
                 hosts: list[Host] = db.host_get_random(cnt)
                 for host in hosts:
                     req = self._select_port(db, host)
@@ -152,9 +215,43 @@ class Scanner:
                                        host.name,
                                        host.addr)
                 time.sleep(self.interval)
+        except ShutDown:
+            pass
         finally:
             db.close()
             self.log.debug("Feeder thread is quitting.")
+            self.scanQ.shutdown()
+            with self.lock:
+                self._active = False
+
+    def _scan_worker(self, wid: int) -> None:
+        self.log.debug("Scan worker %02d starting up.",
+                       wid)
+        try:
+            while self.active:
+                try:
+                    msg = self.cmdQ.get_nowait()
+                except Empty:
+                    pass
+                else:
+                    match msg.Tag:
+                        case Cmd.StopOne | Cmd.Stop:
+                            return
+                try:
+                    req: ScanRequest = self.scanQ.get(True, self.interval)
+                    res: Optional[ScanResult] = self.scan_port(req)
+                    if res is None:
+                        pass
+                except Empty:
+                    time.sleep(self.interval)
+                    continue
+        except ShutDown:
+            pass
+        finally:
+            self.log.info("Scan worker %02d is quitting.",
+                          wid)
+            with self.lock:
+                self.wcnt -= 1
 
     def _gatherer(self) -> None:
         """Gather scanned ports and store them in the database."""
@@ -162,16 +259,24 @@ class Scanner:
         db: Final[Database] = Database()
         try:
             while self.active:
-                pass
+                try:
+                    res = self.resQ.get(True, self.interval)
+                    svc: Service = res.result
+
+                    with db:
+                        db.service_add(svc)
+                except Empty:
+                    continue
+                except DBError as err:
+                    self.log.error("Failed to add Service to database: %s",
+                                   err)
+        except ShutDown:
+            pass
         finally:
+            with self.lock:
+                self._active = False
             db.close()
             self.log.debug("Gatherer thread is quitting.")
-
-    def _scan_worker(self, wid: int) -> None:
-        self.log.debug("Scan worker %02d starting up.",
-                       wid)
-        while self.active:
-            pass
 
     def _select_port(self, db: Database, host: Host) -> Optional[ScanRequest]:
         """Pick a port to scan for <host>."""
@@ -205,6 +310,10 @@ class Scanner:
                 reply = self.scan_tcp_generic(req.host.astr, req.port)
             case 80 | 443 | 8080:
                 reply = self.scan_http(req.host.astr, req.port, req.host.name, req.port == 443)
+            case 79:
+                reply = self.scan_finger(req.host.astr, req.port)
+            case 23 | 3270 | 9023:
+                reply = self.scan_telnet(req.host.astr, req.port)
             case _:
                 raise ValueError(f"Don't know how to handle port {req.port}")
 
