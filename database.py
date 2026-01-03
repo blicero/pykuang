@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 15:54:39 krylon>
+# Time-stamp: <2026-01-03 16:27:52 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -175,7 +175,7 @@ SELECT
     added,
     last_contact,
     sysname,
-    location,
+    location
 FROM host
 WHERE xfr = 0
 ORDER BY added
