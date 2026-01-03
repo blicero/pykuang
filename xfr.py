@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-25 21:56:00 krylon>
+# Time-stamp: <2026-01-03 16:54:02 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -260,6 +260,13 @@ class XFRProcessor:
         """Raise the active flag, start the worker threads."""
         with self.lock:
             self._active = True
+            cnt = self.wcnt
+
+        fthr = Thread(target=self._feeder, daemon=True, name="xfr.feeder")
+        fthr.start()
+
+        for _ in range(cnt):
+            self.start_one()
 
     def stop(self) -> None:
         """If active, stop all running worker threads."""
@@ -301,6 +308,33 @@ class XFRProcessor:
             self.cmdQ.put(msg)
             if self.wcnt == 1:
                 self._active = False
+
+    def _feeder(self) -> None:
+        """Feed XFR requests to the workers."""
+        self.log.debug("XFR Feeder starting up.")
+        db = Database()
+        try:
+            while self.active:
+                hosts = db.host_get_no_xfr(self.wcnt)
+                if len(hosts) == 0:
+                    time.sleep(2)
+                    continue
+
+                for h in hosts:
+                    z = h.zone
+                    x = XFR(name=z)
+                    try:
+                        with db:
+                            db.xfr_add(x)
+                            db.host_set_xfr(h)
+                    except DBError as err:
+                        self.log.error("Failed to add %s to XFR table: %s",
+                                       z,
+                                       err)
+                    else:
+                        self.requestQ.put(x)
+        finally:
+            db.close()
 
     def _worker(self, wid: int) -> None:
         """Perform the actual zone transfer."""
