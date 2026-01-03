@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 15:24:08 krylon>
+# Time-stamp: <2026-01-03 17:02:31 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -305,27 +305,31 @@ class Scanner:
 
     def scan_port(self, req: ScanRequest) -> Optional[ScanResult]:
         """Scan a port."""
-        match req.port:
-            case 21 | 22 | 25 | 110 | 143:
-                reply = self.scan_tcp_generic(req.host.astr, req.port)
-            case 80 | 443 | 8080:
-                reply = self.scan_http(req.host.astr, req.port, req.host.name, req.port == 443)
-            case 79:
-                reply = self.scan_finger(req.host.astr, req.port)
-            case 23 | 3270 | 9023:
-                reply = self.scan_telnet(req.host.astr, req.port)
-            case _:
-                raise ValueError(f"Don't know how to handle port {req.port}")
+        try:
+            match req.port:
+                case 21 | 22 | 25 | 110 | 143 | 220:
+                    reply = self.scan_tcp_generic(req.host.astr, req.port)
+                case 80 | 443 | 8080:
+                    reply = self.scan_http(req.host.astr, req.port, req.host.name, req.port == 443)
+                case 79:
+                    reply = self.scan_finger(req.host.astr, req.port)
+                case 23 | 3270 | 9023:
+                    reply = self.scan_telnet(req.host.astr, req.port)
+                case _:
+                    #  self.log.debug("Don't know how to handle port %d", req.port)
+                    return None
 
-        if reply.status:
-            svc: Final[Service] = Service(
-                host_id=req.host.host_id,
-                port=req.port,
-                added=datetime.now(),
-                response=reply.response,
-            )
-            return ScanResult(host=req.host, result=svc)
-        return None
+            if reply.status:
+                svc: Final[Service] = Service(
+                    host_id=req.host.host_id,
+                    port=req.port,
+                    added=datetime.now(),
+                    response=reply.response,
+                )
+                return ScanResult(host=req.host, result=svc)
+            return None
+        except TimeoutError:
+            return None
 
     def scan_tcp_generic(self, addr: str, port: int) -> ScanReply:
         """Open a TCP connection and report what is received."""
@@ -414,6 +418,8 @@ class Scanner:
         if not 0 < port < 65536:
             raise ValueError(f"Invalid port {port}")
 
+        conn: Optional[Telnet] = None
+
         try:
             conn = Telnet(addr, port)
             data = conn.read_until(b"Sapperlot", conn_timeout)
@@ -423,8 +429,11 @@ class Scanner:
             msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
             self.log.error(msg)
             return ScanReply(False, msg)
+        except TimeoutError:
+            return ScanReply(False, "Timeout")
         finally:
-            conn.close()
+            if conn is not None:
+                conn.close()
 
 # def scan_snmp(self, addr: str, port: int) -> ScanReply:
 #     """Attempt to scan an SNMP server."""
