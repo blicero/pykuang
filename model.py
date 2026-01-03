@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-27 19:23:09 krylon>
+# Time-stamp: <2026-01-03 15:38:13 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -16,11 +16,16 @@ pykuang.model
 (c) 2025 Benjamin Walkenhorst
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
-from typing import Optional, Union
+from typing import Final, Optional, Union
+
+from pykuang.common import KuangError
+
+zone_pat: Final[re.Pattern] = re.compile("^[^.]+[.](.*)$")
 
 
 class HostSource(IntEnum):
@@ -45,11 +50,21 @@ class Host:
     last_contact: Optional[datetime] = None
     sysname: str = ""
     location: str = ""
+    xfr: bool = False
 
     @property
     def astr(self) -> str:
         """Return the Host's IP address as a string."""
         return str(self.addr)
+
+    @property
+    def zone(self) -> str:
+        """Return the DNS zone a host belongs to."""
+        m = zone_pat.match(self.name)
+        if m is None:
+            raise KuangError(f"Could not extract DNS zone from hostname {self.name}")
+
+        return m[1]
 
 
 @dataclass(kw_only=True, slots=True)

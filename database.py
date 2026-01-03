@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-27 16:50:41 krylon>
+# Time-stamp: <2026-01-03 15:54:39 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -46,11 +46,13 @@ CREATE TABLE host (
     last_contact INTEGER,
     sysname TEXT NOT NULL DEFAULT '',
     location TEXT NOT NULL DEFAULT '',
+    xfr INTEGER NOT NULL DEFAULT 0,
     CHECK (src BETWEEN 1 AND 5)
 ) STRICT
     """,
     "CREATE INDEX host_added_idx ON host (added)",
     "CREATE INDEX host_last_contact_idx ON host (COALESCE(last_contact, 0))",
+    "CREATE INDEX host_xfr_idx ON host (xfr = 0)",
     """
 CREATE TABLE svc (
     id INTEGER PRIMARY KEY,
@@ -88,6 +90,7 @@ CREATE TABLE xfr (
     CHECK (finished >= started)
 ) STRICT
     """,
+    "CREATE INDEX xfr_start_idx ON xfr (started)",
     "CREATE INDEX xfr_finish_idx ON xfr (finished)",
     "CREATE INDEX xfr_name_idx ON xfr (name)",
 ]
@@ -100,10 +103,12 @@ class Query(Enum):
     HostGetByAddr = auto()
     HostGetByID = auto()
     HostGetRandom = auto()
+    HostGetNoXFR = auto()
     HostGetAll = auto()
     HostUpdateLastContact = auto()
     HostUpdateSysname = auto()
     HostUpdateLocation = auto()
+    HostSetXfr = auto()
 
     SvcAdd = auto()
     SvcGetByPort = auto()
@@ -127,7 +132,8 @@ SELECT
     added,
     last_contact,
     sysname,
-    location
+    location,
+    xfr
 FROM host
 WHERE addr = ?
     """,
@@ -139,7 +145,8 @@ SELECT
     added,
     last_contact,
     sysname,
-    location
+    location,
+    xfr
 FROM host
 WHERE id = ?
     """,
@@ -151,12 +158,28 @@ SELECT
     src,
     added,
     last_contact,
-    COALESCE(sysname, ''),
-    COALESCE(location, '')
+    sysname,
+    location,
+    xfr
 FROM host
 ORDER BY COALESCE(last_contact, 0) DESC
 LIMIT ?
 OFFSET ABS(RANDOM()) % MAX((SELECT COUNT(*) FROM host), 1)
+    """,
+    Query.HostGetNoXFR: """
+SELECT
+    id,
+    addr,
+    src,
+    name,
+    added,
+    last_contact,
+    sysname,
+    location,
+FROM host
+WHERE xfr = 0
+ORDER BY added
+LIMIT ?
     """,
     Query.HostGetAll: """
 SELECT
@@ -167,10 +190,14 @@ SELECT
     added,
     last_contact,
     sysname,
-    location
+    location,
+    xfr
 FROM host
 """,
     Query.HostUpdateLastContact: "UPDATE host SET last_contact = ? WHERE id = ?",
+    Query.HostUpdateSysname: "UPDATE host SET sysname = ? WHERE id = ?",
+    Query.HostUpdateLocation: "UPDATE host SET location = ? WHERE id = ?",
+    Query.HostSetXfr: "UPDATE host SET xfr = 1 WHERE id = ?",
     Query.SvcAdd: """
 INSERT INTO svc (host_id, port, added, response)
          VALUES (      ?,    ?,     ?,        ?)
@@ -315,6 +342,7 @@ class Database:
                           last_contact=maybe_timestamp(row[4]),
                           sysname=row[5],
                           location=row[6],
+                          xfr=(row[7] != 0),
                           )
 
         return host
@@ -337,6 +365,7 @@ class Database:
             last_contact=maybe_timestamp(row[4]),
             sysname=row[5],
             location=row[6],
+            xfr=(row[7] != 0),
         )
 
         return host
@@ -359,6 +388,7 @@ class Database:
                 last_contact=maybe_timestamp(row[5]),
                 sysname=row[6],
                 location=row[7],
+                xfr=(row[8] != 0),
             )
 
             hosts.append(host)
@@ -385,10 +415,31 @@ class Database:
                 last_contact=maybe_timestamp(row[5]),
                 sysname=row[6],
                 location=row[7],
+                xfr=(row[8] != 0),
             )
 
             hosts.append(host)
 
+        return hosts
+
+    def host_get_no_xfr(self, cnt: int) -> list[Host]:
+        """Get <cnt> Hosts for the XFRProcessor."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.HostGetNoXFR], (cnt, ))
+        hosts: list[Host] = []
+
+        for row in cur:
+            host = Host(
+                host_id=row[0],
+                addr=ip_address(row[1]),
+                src=HostSource(row[2]),
+                name=row[3],
+                added=datetime.fromtimestamp(row[4]),
+                last_contact=maybe_timestamp(row[5]),
+                sysname=row[6],
+                location=row[7],
+            )
+            hosts.append(host)
         return hosts
 
     def host_update_contact(self, host: Host, tstamp: Optional[datetime] = None) -> None:
@@ -407,19 +458,31 @@ class Database:
         cur.execute(qdb[Query.HostUpdateLastContact], (tstamp, host.host_id))
         host.last_contact = tstamp
 
+    def host_set_xfr(self, host: Host) -> None:
+        """Set a Host's XFR flag."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.HostSetXfr], (host.host_id, ))
+        host.xfr = True
+
     def service_add(self, svc: Service) -> None:
         """Add a scanned port to the database."""
-        cur: Final[sqlite3.Cursor] = self.db.cursor()
-        cur.execute(qdb[Query.SvcAdd],
-                    (svc.host_id, svc.port, int(svc.added.timestamp()), svc.response))
+        try:
+            cur: Final[sqlite3.Cursor] = self.db.cursor()
+            cur.execute(qdb[Query.SvcAdd],
+                        (svc.host_id, svc.port, int(svc.added.timestamp()), svc.response))
 
-        row = cur.fetchone()
-        if row is None:
-            self.log.error("Adding service %d:%d did not return an ID.",
-                           svc.host_id,
-                           svc.port)
-        else:
-            svc.sv_id = row[0]
+            row = cur.fetchone()
+            if row is None:
+                self.log.error("Adding service %d:%d did not return an ID.",
+                               svc.host_id,
+                               svc.port)
+            else:
+                svc.sv_id = row[0]
+        except sqlite3.Error as err:
+            cname: Final[str] = err.__class__.__name__
+            msg = f"{cname} trying to add Service {svc.host_id}:{svc.port}: {err}"
+            self.log.error(msg)
+            raise DBError(msg) from err
 
     def service_get_by_host(self, host: Host) -> list[Service]:
         """Get all scanned ports for <host>."""
