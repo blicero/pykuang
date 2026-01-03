@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-25 18:20:50 krylon>
+# Time-stamp: <2026-01-03 15:22:20 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 12. 2025
@@ -24,6 +24,7 @@ from threading import RLock
 from pykuang import common
 from pykuang.control import Facility, Message
 from pykuang.generator import ParallelGenerator
+from pykuang.scanner import Scanner
 from pykuang.xfr import XFRProcessor
 
 
@@ -37,14 +38,20 @@ class Nexus:
     cmdQ: Queue[Message] = field(init=False)
     pgen: ParallelGenerator = field(init=False)
     pxfr: XFRProcessor = field(init=False)
+    pscn: Scanner = field(init=False)
     gcnt: int
     xcnt: int
     scnt: int
 
     def __post_init__(self) -> None:
+        assert self.gcnt > 0
+        assert self.xcnt > 0
+        assert self.scnt > 0
+
         self.cmdQ = Queue()
         self.pgen = ParallelGenerator(wcnt=self.gcnt)
         self.pxfr = XFRProcessor(wcnt=self.xcnt)
+        self.pscn = Scanner(wcnt=self.scnt)
 
     @property
     def active(self) -> bool:
@@ -54,8 +61,11 @@ class Nexus:
 
     def start(self) -> None:
         """Let get this Nexus started!"""
+        with self.lock:
+            self._active = True
         self.pxfr.start()
         self.pgen.start()
+        self.pscn.start()
 
     def start_one(self, subsystem: Facility) -> None:
         """Start a single worker thread in the specified subsystem."""
@@ -67,7 +77,7 @@ class Nexus:
             case Facility.XFR:
                 self.pxfr.start_one()
             case Facility.Scanner:
-                self.log.error("IMPLEMENTME - Scanner is not implemented, yet!!!")
+                self.pscn.start_one()
 
     def stop_one(self, subsystem: Facility) -> None:
         """Stop one worker thread in the specified subsystem."""
@@ -79,7 +89,7 @@ class Nexus:
             case Facility.XFR:
                 self.pxfr.stop_one()
             case Facility.Scanner:
-                self.log.error("IMPLEMENTME - Scanner is not implemented, yet!!!")
+                self.pscn.stop_one()
 
 # Local Variables: #
 # python-indent: 4 #
