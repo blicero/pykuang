@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 16:27:52 krylon>
+# Time-stamp: <2026-01-05 14:57:56 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -117,6 +117,7 @@ class Query(Enum):
     XfrAdd = auto()
     XfrStart = auto()
     XfrEnd = auto()
+    XfrGetUnstarted = auto()
     XfrGetUnfinished = auto()
     XfrGetByID = auto()
     XfrGetByName = auto()
@@ -216,6 +217,16 @@ ORDER BY port
     Query.XfrAdd: "INSERT INTO xfr (name, added) VALUES (?, ?) RETURNING id",
     Query.XfrStart: "UPDATE xfr SET started = ? WHERE id = ?",
     Query.XfrEnd: "UPDATE xfr SET finished = ?, status = ? WHERE id = ?",
+    Query.XfrGetUnstarted: """
+SELECT
+    id,
+    name,
+    added,
+    status
+FROM xfr
+WHERE started = 0
+LIMIT ?
+    """,
     Query.XfrGetUnfinished: """
 SELECT
     id,
@@ -529,6 +540,23 @@ class Database:
         cur.execute(qdb[Query.XfrEnd], (int(now.timestamp()), status, xfr.zone_id))
         xfr.finished = now
         xfr.status = status
+
+    def xfr_get_unstarted(self, limit: int = -1) -> list[XFR]:
+        """Get up to <limit> XFRs that have not been started, yet."""
+        cur = self.db.cursor()
+        cur.execute(qdb[Query.XfrGetUnstarted], (limit, ))
+        zones: list[XFR] = []
+
+        for row in cur:
+            x: XFR = XFR(
+                zone_id=row[0],
+                name=row[1],
+                added=datetime.fromtimestamp(row[2]),
+                status=row[3],
+            )
+            zones.append(x)
+
+        return zones
 
     def xfr_get_unfinished(self, limit: int = -1) -> list[XFR]:
         """Get up to <limit> unfinished XFRs from the database.
