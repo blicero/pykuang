@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 15:10:07 krylon>
+# Time-stamp: <2026-01-05 16:01:21 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -91,6 +91,8 @@ class XFRClient:
                 return ip_address(answer.rrset[0].address)
         except NXDOMAIN:
             pass
+        except LifetimeTimeout:
+            pass
         return None
 
     def lookup_ns(self, xfr: XFR) -> Sequence[Union[str, IPv4Address, IPv6Address]]:
@@ -127,11 +129,11 @@ class XFRClient:
     def attempt_xfr(self, xfr: XFR, ns: str) -> bool:
         """Attempt to query <ns> for an XFR of <xfr>."""
         status: bool = False
+        cnt: int = 0
+        now = datetime.now()
+        bl_cnt: int = 0
         try:
             zone = dns.zone.from_xfr(dns.query.xfr(ns, xfr.name))
-            now = datetime.now()
-            cnt: int = 0
-            bl_cnt: int = 0
 
             for key, node in zone.nodes.items():
                 cnt += 1
