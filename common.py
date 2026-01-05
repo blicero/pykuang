@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 16:15:28 krylon>
+# Time-stamp: <2026-01-05 16:30:13 krylon>
 #
 # /data/code/python/headlines/src/headlines/common.py
 # created on 30. 09. 2025
@@ -36,6 +36,8 @@ log_level_tty: int = logging.DEBUG
 log_levels: Final[defaultdict[str, int]] = defaultdict(lambda: logging.DEBUG)
 
 log_levels["generator"] = logging.INFO
+log_levels["bl_name"] = logging.ERROR
+log_levels["xfr"] = logging.ERROR
 
 
 def parse_iso_date(s: str, end: bool = False) -> Optional[datetime]:
