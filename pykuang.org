@@ -1,5 +1,5 @@
 # -*- mode: org; fill-column: 78; -*-
-# Time-stamp: <2026-01-03 19:02:55 krylon>
+# Time-stamp: <2026-01-05 15:19:59 krylon>
 #
 #+TAGS: internals(i) ui(u) bug(b) feature(f)
 #+TAGS: database(d) design(e), meditation(m)
@@ -8,37 +8,38 @@
 #+TODO: MEDITATE(m) PLANNING(p) | SUSPENDED(s)
 #+PRIORITIES: A G D
 
-* PyKuang [9/12]
+* PyKuang [11/13]
   :PROPERTIES:
   :COOKIE_DATA: todo recursive
   :VISIBILITY: children
   :END:
 ** Clocktable
    #+BEGIN: clocktable :scope file :maxlevel 255 :emphasize t
-   #+CAPTION: Clock summary at [2026-01-03 Sa 19:02]
+   #+CAPTION: Clock summary at [2026-01-05 Mo 15:19]
    | Headline                                     | Time      |           |         |      |      |
    |----------------------------------------------+-----------+-----------+---------+------+------|
-   | *Total time*                                 | *3d 2:40* |           |         |      |      |
+   | *Total time*                                 | *3d 3:21* |           |         |      |      |
    |----------------------------------------------+-----------+-----------+---------+------+------|
-   | *PyKuang [9/12]*                             | *3d 2:40* |           |         |      |      |
-   | \_  /Components [9/12]/                      |           | /3d 2:40/ |         |      |      |
+   | *PyKuang [11/13]*                            | *3d 3:21* |           |         |      |      |
+   | \_  /Components [11/13]/                     |           | /3d 3:21/ |         |      |      |
    | \_    Common [1/1]                           |           |           |    0:08 |      |      |
    | \_      Make TTY logging configurable        |           |           |         | 0:08 |      |
    | \_    Model [0/0]                            |           |           |    0:25 |      |      |
-   | \_    Database [2/3]                         |           |           |    8:16 |      |      |
+   | \_    Database [2/3]                         |           |           |    8:26 |      |      |
    | \_      Add support for zone transfers       |           |           |         | 3:41 |      |
    | \_      Implement methods to deal with ports |           |           |         | 2:13 |      |
    | \_    Cache [0/0]                            |           |           |    1:45 |      |      |
-   | \_    Generator [0/0]                        |           |           |    4:14 |      |      |
+   | \_    Generator [1/1]                        |           |           |    4:30 |      |      |
+   | \_      Add XFR when adding Host to database |           |           |         | 0:16 |      |
    | \_    Blacklist [0/0]                        |           |           |    3:59 |      |      |
    | \_    Scanner [6/7]                          |           |           |   22:01 |      |      |
    | \_      Be specific, please [5/5]            |           |           |         | 4:34 |      |
    | \_        Telnet                             |           |           |         |      | 0:54 |
    | \_        Finger                             |           |           |         |      | 0:17 |
    | \_      Rethink the interface                |           |           |         | 2:46 |      |
-   | \_    XFR [0/1]                              |           |           | 1d 6:29 |      |      |
+   | \_    XFR [1/1]                              |           |           | 1d 6:37 |      |      |
    | \_      Figure out the mechanics             |           |           |         | 3:06 |      |
-   | \_    Nexus [0/0]                            |           |           |    3:23 |      |      |
+   | \_    Nexus [0/0]                            |           |           |    3:30 |      |      |
    | \_      Control [0/0]                        |           |           |         | 1:09 |      |
    #+END:
 ** Features [0/0]
@@ -46,7 +47,7 @@
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
    :END:
-** Components [9/12]
+** Components [11/13]
    :PROPERTIES:
    :COOKIE_DATA: todo recursive
    :VISIBILITY: children
@@ -75,6 +76,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2026-01-05 Mo 14:54]--[2026-01-05 Mo 15:04] =>  0:10
     CLOCK: [2026-01-03 Sa 15:42]--[2026-01-03 Sa 16:03] =>  0:21
     CLOCK: [2025-12-08 Mo 15:46]--[2025-12-08 Mo 16:31] =>  0:45
     CLOCK: [2025-12-06 Sa 15:14]--[2025-12-06 Sa 15:35] =>  0:21
@@ -102,7 +104,7 @@
     CLOCK: [2025-12-09 Di 15:55]--[2025-12-09 Di 16:30] =>  0:35
     CLOCK: [2025-12-05 Fr 17:15]--[2025-12-05 Fr 18:25] =>  1:10
     :END:
-*** Generator [0/0]
+*** Generator [1/1]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
@@ -118,6 +120,11 @@
     want to look into parallelizing that. Which should not be hard or
     surprising. But I would like to have control over the number of generator
     threads, as I did in my last attempt in Go.
+**** DONE Add XFR when adding Host to database
+     CLOSED: [2026-01-05 Mo 14:54]
+     :LOGBOOK:
+     CLOCK: [2026-01-05 Mo 14:38]--[2026-01-05 Mo 14:54] =>  0:16
+     :END:
 *** Blacklist [0/0]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
@@ -183,12 +190,13 @@
      least for manual testing.
      Ideally, the actual scanning functions should just take an IP address and
      a port number.
-*** XFR [0/1]
+*** XFR [1/1]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2026-01-05 Mo 15:04]--[2026-01-05 Mo 15:12] =>  0:08
     CLOCK: [2026-01-03 Sa 15:28]--[2026-01-03 Sa 15:29] =>  0:01
     CLOCK: [2025-12-24 Mi 15:13]--[2025-12-24 Mi 15:30] =>  0:17
     CLOCK: [2025-12-23 Di 12:40]--[2025-12-23 Di 16:49] =>  4:09
@@ -201,7 +209,8 @@
     CLOCK: [2025-12-13 Sa 15:28]--[2025-12-13 Sa 17:17] =>  1:49
     CLOCK: [2025-12-12 Fr 16:45]--[2025-12-12 Fr 17:06] =>  0:21
     :END:
-**** TODO Figure out the mechanics
+**** DONE Figure out the mechanics
+     CLOSED: [2026-01-05 Mo 15:04]
      :LOGBOOK:
      CLOCK: [2026-01-03 Sa 16:09]--[2026-01-03 Sa 19:02] =>  2:53
      CLOCK: [2026-01-03 Sa 15:29]--[2026-01-03 Sa 15:42] =>  0:13
@@ -211,6 +220,10 @@
      In earlier incarnations, I used to have the Generator feed hostnames to
      the XFR subsystem, but for ... reasons, I want both of them to be able to
      run in isolation.
+     ...
+     I think I have an idea: The *generator* adds an XFR to the database
+     whenever it adds a Host to the database.
+     the XFRProcessor fetches unfinished XFRs.
 *** Web Interface [0/0]
     :PROPERTIES:
     :COOKIE_DATA: todo recursive
@@ -222,6 +235,7 @@
     :VISIBILITY: children
     :END:
     :LOGBOOK:
+    CLOCK: [2026-01-05 Mo 15:12]--[2026-01-05 Mo 15:19] =>  0:07
     CLOCK: [2025-12-25 Do 18:12]--[2025-12-25 Do 18:12] =>  0:00
     CLOCK: [2025-12-24 Mi 15:31]--[2025-12-24 Mi 16:25] =>  0:54
     CLOCK: [2025-12-12 Fr 15:26]--[2025-12-12 Fr 15:33] =>  0:07
