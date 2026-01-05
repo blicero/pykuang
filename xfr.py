@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 16:36:08 krylon>
+# Time-stamp: <2026-01-05 16:53:49 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -151,7 +151,7 @@ class XFRClient:
                            xfr.name,
                            terr)
         except DNSException as cerr:
-            self.log.error("XFR of %s failed: %s",
+            self.log.debug("XFR of %s failed: %s",
                            xfr.name,
                            cerr)
         finally:
