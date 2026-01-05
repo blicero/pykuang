@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 15:38:13 krylon>
+# Time-stamp: <2026-01-05 14:48:19 krylon>
 #
 # /data/code/python/pykuang/model.py
 # created on 05. 12. 2025
@@ -22,8 +22,6 @@ from datetime import datetime
 from enum import IntEnum, auto
 from ipaddress import IPv4Address, IPv6Address
 from typing import Final, Optional, Union
-
-from pykuang.common import KuangError
 
 zone_pat: Final[re.Pattern] = re.compile("^[^.]+[.](.*)$")
 
@@ -58,12 +56,11 @@ class Host:
         return str(self.addr)
 
     @property
-    def zone(self) -> str:
+    def zone(self) -> Optional[str]:
         """Return the DNS zone a host belongs to."""
         m = zone_pat.match(self.name)
         if m is None:
-            raise KuangError(f"Could not extract DNS zone from hostname {self.name}")
-
+            return None
         return m[1]
 
 
