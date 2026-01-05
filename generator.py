@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2025-12-25 22:15:02 krylon>
+# Time-stamp: <2026-01-05 15:15:59 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -35,7 +35,7 @@ from pykuang.blacklist import IPBlacklist, NameBlacklist
 from pykuang.cache import Cache, CacheDB, CacheType
 from pykuang.control import Cmd, Message
 from pykuang.database import Database
-from pykuang.model import Host
+from pykuang.model import XFR, Host
 
 
 @dataclass(kw_only=True, slots=True)
@@ -259,8 +259,15 @@ class ParallelGenerator:
             while self.active:
                 try:
                     host: Host = self.hostQ.get(True, q_timeout)
+                    zone: Optional[str] = host.zone
                     with db:
                         db.host_add(host)
+                        if zone is not None:
+                            xf = db.xfr_get_by_name(zone)
+                            if xf is None:
+                                xf = XFR(name=zone)
+                                db.xfr_add(xf)
+                                db.host_set_xfr(host)
                 except Empty:
                     pass
         finally:
