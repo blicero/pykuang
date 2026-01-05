@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 17:02:31 krylon>
+# Time-stamp: <2026-01-05 15:18:22 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -338,6 +338,7 @@ class Scanner:
         try:
             conn = socket.create_connection((addr, port))
             response = conn.recv(rcv_buf)
+            conn.close()
 
             return ScanReply(True, str(response))
         except ConnectionError as cerr:
@@ -345,8 +346,11 @@ class Scanner:
             msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
             self.log.error(msg)
             return ScanReply(False, msg)
-        finally:
-            conn.close()
+        except TimeoutError as terr:
+            cname: Final[str] = terr.__class__.__name__
+            msg = f"{cname} trying to connect to {addr}:{port}: {terr}"
+            self.log.error(msg)
+            return ScanReply(False, msg)
 
     def scan_http(self,
                   addr: str,
