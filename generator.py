@@ -97,11 +97,8 @@ class HostGenerator:
                 case _:
                     self.log.error("Unexpected response code %s",
                                    answer.response.rcode())
-        except NXDOMAIN as nx:
-            # XXX After testing and debugging, I should disable/remove this log message.
-            self.log.error("Couldn't resolve %s into hostname: %s",
-                           addr,
-                           nx)
+        except NXDOMAIN:
+            pass
         except NoNameservers as fail:
             self.log.error("Failed to get a response for %s from upstream resolver(s): %s",
                            addr,
