@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 16:54:02 krylon>
+# Time-stamp: <2026-01-05 15:10:07 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -202,7 +202,7 @@ class XFRClient:
         db = self.db
         try:
             with db:
-                db.xfr_add(xfr)
+                db.xfr_start(xfr)
             # First, we try to get the nameservers for the domain.
             nameservers = self.lookup_ns(xfr)
 
@@ -315,24 +315,13 @@ class XFRProcessor:
         db = Database()
         try:
             while self.active:
-                hosts = db.host_get_no_xfr(self.wcnt)
-                if len(hosts) == 0:
+                zones = db.xfr_get_unstarted(self.wcnt)
+                if len(zones) == 0:
                     time.sleep(2)
                     continue
 
-                for h in hosts:
-                    z = h.zone
-                    x = XFR(name=z)
-                    try:
-                        with db:
-                            db.xfr_add(x)
-                            db.host_set_xfr(h)
-                    except DBError as err:
-                        self.log.error("Failed to add %s to XFR table: %s",
-                                       z,
-                                       err)
-                    else:
-                        self.requestQ.put(x)
+                for x in zones:
+                    self.requestQ.put(x)
         finally:
             db.close()
 
