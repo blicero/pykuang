@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 16:47:39 krylon>
+# Time-stamp: <2026-01-05 19:18:09 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -373,7 +373,9 @@ class Scanner:
                 uri = f"{schema}://{addr}:{port}/"
 
             response = requests.head(uri, timeout=conn_timeout)
-            return ScanReply(True, response.headers["Server"])
+            if "Server" in response.headers:
+                return ScanReply(True, response.headers["Server"])
+            return ScanReply(True, "---")
         except ConnectionError as cerr:
             cname: str = cerr.__class__.__name__
             msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
@@ -440,6 +442,8 @@ class Scanner:
             return ScanReply(False, msg)
         except TimeoutError:
             return ScanReply(False, "Timeout")
+        except OSError as oerr:
+            return ScanReply(False, str(oerr))
         finally:
             if conn is not None:
                 conn.close()
