@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 15:59:48 krylon>
+# Time-stamp: <2026-01-05 16:31:24 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -377,7 +377,7 @@ class Scanner:
         except ConnectionError as cerr:
             cname: str = cerr.__class__.__name__
             msg = f"{cname} trying to connect to {addr}:{port}: {cerr}"
-            self.log.error(msg)
+            # self.log.error(msg)
             return ScanReply(False, msg)
         except requests.exceptions.RequestException as rerr:
             cname = rerr.__class__.__name__
