@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 16:01:21 krylon>
+# Time-stamp: <2026-01-05 16:36:08 krylon>
 #
 # /data/code/python/pykuang/xfr.py
 # created on 12. 12. 2025
@@ -214,16 +214,14 @@ class XFRClient:
                 return False
 
             for ns in nameservers:
-                self.log.debug("Querying %s for AXFR of %s",
-                               ns,
-                               xfr.name)
+                # self.log.debug("Querying %s for AXFR of %s",
+                #                ns,
+                #                xfr.name)
                 addr = self.resolve_name(str(ns))
                 if addr is None:
                     continue
                 if self.attempt_xfr(xfr, str(addr)):
                     status = True
-                    with db:
-                        db.xfr_finish(xfr, True)
                     break
         except DBError as dberr:
             cname: Final[str] = dberr.__class__.__name__
@@ -232,6 +230,9 @@ class XFRClient:
                            xfr.name,
                            dberr,
                            "\n".join(traceback.format_exception(dberr)))
+        finally:
+            with db:
+                db.xfr_finish(xfr, status)
         return status
 
 
