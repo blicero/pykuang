@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-03 15:22:20 krylon>
+# Time-stamp: <2026-01-05 15:45:54 krylon>
 #
 # /data/code/python/pykuang/nexus.py
 # created on 11. 12. 2025
@@ -66,6 +66,14 @@ class Nexus:
         self.pxfr.start()
         self.pgen.start()
         self.pscn.start()
+
+    def stop(self) -> None:
+        """Tell all subsystems to stop."""
+        with self.lock:
+            self._active = True
+        self.pxfr.stop()
+        self.pgen.stop()
+        self.pscn.stop()
 
     def start_one(self, subsystem: Facility) -> None:
         """Start a single worker thread in the specified subsystem."""
