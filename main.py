@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 15:40:56 krylon>
+# Time-stamp: <2026-01-05 15:44:27 krylon>
 #
 # /data/code/python/pykuang/main.py
 # created on 05. 01. 2026
@@ -26,6 +26,7 @@ from pykuang.nexus import Nexus
 
 
 def main() -> None:
+    """Run the pykuang application."""
     argp: argparse.ArgumentParser = argparse.ArgumentParser()
     argp.add_argument("-g", "--generator",
                       type=int,
