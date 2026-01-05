@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 15:15:59 krylon>
+# Time-stamp: <2026-01-05 16:44:29 krylon>
 #
 # /data/code/python/pykuang/generator.py
 # created on 09. 12. 2025
@@ -99,10 +99,11 @@ class HostGenerator:
                                    answer.response.rcode())
         except NXDOMAIN:
             pass
-        except NoNameservers as fail:
-            self.log.error("Failed to get a response for %s from upstream resolver(s): %s",
-                           addr,
-                           fail)
+        except NoNameservers:
+            pass
+            # self.log.debug("Failed to get a response for %s from upstream resolver(s): %s",
+            #                addr,
+            #                fail)
         except LifetimeTimeout:
             pass
         except NoAnswer:
