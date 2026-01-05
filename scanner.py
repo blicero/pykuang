@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 15:18:22 krylon>
+# Time-stamp: <2026-01-05 15:59:48 krylon>
 #
 # /data/code/python/pykuang/scanner.py
 # created on 26. 12. 2025
@@ -347,8 +347,13 @@ class Scanner:
             self.log.error(msg)
             return ScanReply(False, msg)
         except TimeoutError as terr:
-            cname: Final[str] = terr.__class__.__name__
-            msg = f"{cname} trying to connect to {addr}:{port}: {terr}"
+            xname: Final[str] = terr.__class__.__name__
+            msg = f"{xname} trying to connect to {addr}:{port}: {terr}"
+            self.log.error(msg)
+            return ScanReply(False, msg)
+        except OSError as oerr:
+            oname: Final[str] = oerr.__class__.__name__
+            msg = f"{oname} trying to connect to {addr}:{port}: {oerr}"
             self.log.error(msg)
             return ScanReply(False, msg)
 
