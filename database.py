@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Time-stamp: <2026-01-05 14:57:56 krylon>
+# Time-stamp: <2026-01-05 15:55:51 krylon>
 #
 # /data/code/python/pykuang/database.py
 # created on 05. 12. 2025
@@ -87,7 +87,7 @@ CREATE TABLE xfr (
     started INTEGER NOT NULL DEFAULT 0,
     finished INTEGER NOT NULL DEFAULT 0,
     status INTEGER NOT NULL DEFAULT 0,
-    CHECK (finished >= started)
+    CHECK (finished = 0 OR finished >= started)
 ) STRICT
     """,
     "CREATE INDEX xfr_start_idx ON xfr (started)",
